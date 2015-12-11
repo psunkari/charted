@@ -7,6 +7,8 @@
  */
 part of charted.selection;
 
+typedef void _ActionFunction(Element e, dynamic val, dynamic context);
+
 /**
  * Implementation of [Selection].
  * Selections cannot be created directly - they are only created using
@@ -124,12 +126,22 @@ class _SelectionImpl implements Selection {
   }
 
   /**
-   * Utility to evaluate value of parameters (uses value when given
-   * or invokes a callback to get the value) and calls [action] for
-   * each non-null element in this selection
+   * Utility to evaluate value of parameters that invokes a callback to get
+   * the value and calls [action] for each non-null element in this selection.
    */
-  void _do(SelectionCallback f, Function action) {
-    each((d, i, e) => action(e, f == null ? null : f(scope.datum(e), i, e)));
+  void _do(SelectionCallback f, _ActionFunction action, dynamic context) {
+    assert(f != null && action != null);
+    each((d, i, e) => action(e, f(scope.datum(e), i, e), context));
+  }
+
+  /**
+   * Utility to evaluate value of parameters that uses a value instead of
+   * callback for each element and calls [action] for each non-null element
+   * in this selection.
+   */
+  void _doWithValue(val, _ActionFunction action, dynamic context) {
+    assert(action != null);
+    each((d, i, e) => action(e, val, context));
   }
 
   /** Calls a function on each non-null element in the selection */
@@ -208,60 +220,82 @@ class _SelectionImpl implements Selection {
     return null;
   }
 
+  static void _attrAction(Element e, v, String name) {
+    v == null ? e.attributes.remove(name) : e.attributes[name] = '$v';
+  }
+
   void attr(String name, val) {
     assert(name != null && name.isNotEmpty);
-    attrWithCallback(name, toCallback(val));
+    _doWithValue(val, _attrAction, name);
   }
 
   void attrWithCallback(String name, SelectionCallback fn) {
     assert(fn != null);
-    _do(
-        fn,
-        (e, v) =>
-            v == null ? e.attributes.remove(name) : e.attributes[name] = "$v");
+    _do(fn, _attrAction, name);
+  }
+
+  static void _classedAction(Element e, String v, String name) {
+    v == false ? e.classes.remove(name) : e.classes.add(name);
   }
 
   void classed(String name, [bool val = true]) {
     assert(name != null && name.isNotEmpty);
-    classedWithCallback(name, toCallback(val));
+    _doWithValue(val, _classedAction, name);
   }
 
   void classedWithCallback(String name, SelectionCallback<bool> fn) {
     assert(fn != null);
-    _do(fn,
-        (e, v) => v == false ? e.classes.remove(name) : e.classes.add(name));
+    _do(fn, _classedAction, name);
+  }
+
+  static void _styleAction(Element e, String v, Pair<String, String> context) {
+    v == null || v.isEmpty
+        ? e.style.removeProperty(context.first)
+        : e.style.setProperty(context.first, v, context.last);
   }
 
   void style(String property, val, {String priority}) {
     assert(property != null && property.isNotEmpty);
-    styleWithCallback(property, toCallback(val as String), priority: priority);
+    _doWithValue(val, _styleAction, new Pair(property, priority));
   }
 
   void styleWithCallback(String property, SelectionCallback<String> fn,
       {String priority}) {
     assert(fn != null);
-    _do(
-        fn,
-        (Element e, String v) => v == null || v.isEmpty
-            ? e.style.removeProperty(property)
-            : e.style.setProperty(property, v, priority));
+    _do(fn, _styleAction, new Pair(property, priority));
   }
 
-  void text(String val) => textWithCallback(toCallback(val));
+  static void _textAction(Element e, String v, _) {
+    e.text = v == null ? '' : v;
+  }
+
+  void text(String val) {
+    _doWithValue(val, _textAction, null);
+  }
 
   void textWithCallback(SelectionCallback<String> fn) {
     assert(fn != null);
-    _do(fn, (e, v) => e.text = v == null ? '' : v);
+    _do(fn, _textAction, null);
   }
 
-  void html(String val) => htmlWithCallback(toCallback(val));
+  static void _htmlAction(Element e, String v, _) {
+    e.innerHtml = v == null ? '' : v;
+  }
+
+  void html(String val) {
+    _doWithValue(val, _htmlAction, null);
+  }
 
   void htmlWithCallback(SelectionCallback<String> fn) {
     assert(fn != null);
-    _do(fn, (e, v) => e.innerHtml = v == null ? '' : v);
+    _do(fn, _htmlAction, null);
   }
 
-  void remove() => _do(null, (e, _) => e.remove());
+  static void _removeAction(Element e, _, __) {
+    e.remove();
+  }
+
+  void remove() => _doWithValue(null, _removeAction, null);
 
   Selection select(String selector) {
     assert(selector != null && selector.isNotEmpty);
