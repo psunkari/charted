@@ -12,14 +12,23 @@ part of charted.core.utils;
 /// parse the namespace prefixes and to create DOM elements using a
 /// namespace.
 class Namespace {
-  /// Supported namespace prefixes mapped to their URIs.
-  static const Map<String, String> NS_PREFIXES = const {
-    "svg": "http://www.w3.org/2000/svg",
-    "xhtml": "http://www.w3.org/1999/xhtml",
-    "xlink": "http://www.w3.org/1999/xlink",
-    "xml": "http://www.w3.org/XML/1998/namespace",
-    "xmlns": "http://www.w3.org/2000/xmlns/"
-  };
+  /// List of supported namespace prefixes.
+  static const NAMESPACE_PREFIXES = const [
+    'svg',
+    'xhtml',
+    'xlink',
+    'xml',
+    'xmlns'
+  ];
+
+  /// List of supported namespaces (in the same order as their prefixes)
+  static const NAMESPACES = const [
+    "http://www.w3.org/2000/svg",
+    "http://www.w3.org/1999/xhtml",
+    "http://www.w3.org/1999/xlink",
+    "http://www.w3.org/XML/1998/namespace",
+    "http://www.w3.org/2000/xmlns/"
+  ];
 
   /// Create an element from [tag]. If tag is prefixed with a
   /// supported namespace prefix, the created element will
@@ -54,12 +63,12 @@ class Namespace {
     if (separatorIdx >= 0) {
       prefix = tagName.substring(0, separatorIdx);
       localName = tagName.substring(separatorIdx + 1);
-    }
 
-    if (NS_PREFIXES.containsKey(prefix)) {
-      namespaceUri = NS_PREFIXES[prefix];
-    } else {
-      localName = tagName;
+      var prefixIdx = NAMESPACE_PREFIXES.indexOf(prefix);
+      if (prefixIdx >= 0) {
+        namespaceUri = NAMESPACES.elementAt(prefixIdx);
+      }
     }
+    if (namespaceUri == null) localName = tagName;
   }
 }

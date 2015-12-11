@@ -1,4 +1,3 @@
-
 library charted.benchmarks.selection;
 
 import 'dart:html';
@@ -33,7 +32,6 @@ class DataJoinBenchmark extends BenchmarkBase {
 
   @override
   void setUp() {
-    data.clear();
     data.addAll(generateData());
   }
 
@@ -54,19 +52,22 @@ class EnterAppendBenchmark extends BenchmarkBase {
         selection = scope.selectAll('div').data(data);
 
     selection.enter.append('div');
-    selection.selectAll('div').
-        dataWithCallback((d,i,e) => d).enter.append('div');
+    selection
+        .selectAll('div')
+        .dataWithCallback((d, i, e) => d)
+        .enter
+        .append('div');
   }
 
   @override
   void setUp() {
     data.addAll(generateData());
-    document.querySelector('#benchmark-wrapper').innerHtml = '';
   }
 
   @override
   void tearDown() {
     data.clear();
+    document.querySelector('#benchmark-wrapper').innerHtml = '';
   }
 }
 

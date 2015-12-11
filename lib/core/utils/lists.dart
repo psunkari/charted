@@ -37,7 +37,7 @@ class Pair<T1, T2> {
 }
 
 /// Represents a pair of mininum and maximum values in a List.
-class Extent<T> extends Pair<T, T> {
+class Extent<T> {
   final T min;
   final T max;
 
@@ -52,10 +52,12 @@ class Extent<T> extends Pair<T, T> {
     return new Extent(min, max);
   }
 
-  const Extent(T min, T max)
-      : min = min,
-        max = max,
-        super(min, max);
+  const Extent(this.min, this.max);
+
+  bool operator ==(other) =>
+      other is Extent && min == other.min && max == other.max;
+
+  int get hashCode => hash2(min, max);
 }
 
 /// Iterable representing a range of values containing the start, stop
