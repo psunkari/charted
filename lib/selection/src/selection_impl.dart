@@ -120,17 +120,28 @@ class _SelectionImpl implements Selection {
    * be part of the same group, with [SelectionScope.root] as the group's parent
    */
   _SelectionImpl.elements(Iterable elements, SelectionScope this.scope) {
-    groups = new List<SelectionGroup>()..add(new _SelectionGroupImpl(elements));
+    groups = <SelectionGroup>[new _SelectionGroupImpl(elements)];
   }
 
   /** Calls a function on each non-null element in the selection */
   void each(SelectionCallback fn) {
-    if (fn == null) return;
+    assert(fn != null);
     for (int gi = 0, gLen = groups.length; gi < gLen; ++gi) {
       final g = groups.elementAt(gi);
       for (int ei = 0, eLen = g.elements.length; ei < eLen; ++ei) {
         final e = g.elements.elementAt(ei);
         if (e != null) fn(scope.datum(e), ei, e);
+      }
+    }
+  }
+
+  void forEachElement(void fn(Element element)) {
+    assert(fn != null);
+    for (int gi = 0, gLen = groups.length; gi < gLen; ++gi) {
+      final g = groups.elementAt(gi);
+      for (int ei = 0, eLen = g.elements.length; ei < eLen; ++ei) {
+        final e = g.elements.elementAt(ei);
+        if (e != null) fn(e);
       }
     }
   }
@@ -180,7 +191,7 @@ class _SelectionImpl implements Selection {
 
   int get length {
     int retval = 0;
-    each((d, i, e) => retval++);
+    forEachElement((e) => retval++);
     return retval;
   }
 
@@ -205,12 +216,12 @@ class _SelectionImpl implements Selection {
 
   void attr(String name, String val) {
     assert(name != null && name.isNotEmpty);
-    each((d, i, e) => _attrAction(e, val, name));
+    forEachElement((e) => _attrAction(e, val, name));
   }
 
   void attrWithCallback(String name, SelectionCallback fn) {
     assert(fn != null);
-    each((d, i, e) => _attrAction(e, fn(scope.datum(e), i, e), name));
+    each((d, i, e) => _attrAction(e, fn(d, i, e), name));
   }
 
   void _classedAction(Element e, bool add, String name) {
@@ -219,12 +230,12 @@ class _SelectionImpl implements Selection {
 
   void classed(String name, [bool val = true]) {
     assert(name != null && name.isNotEmpty);
-    each((d, i, e) => _classedAction(e, val, name));
+    forEachElement((e) => _classedAction(e, val, name));
   }
 
   void classedWithCallback(String name, SelectionCallback<bool> fn) {
     assert(fn != null);
-    each((d, i, e) => _classedAction(e, fn(scope.datum(e), i, e), name));
+    each((d, i, e) => _classedAction(e, fn(d, i, e), name));
   }
 
   void _styleAction(
@@ -236,14 +247,14 @@ class _SelectionImpl implements Selection {
 
   void style(String property, String val, {String priority}) {
     assert(property != null && property.isNotEmpty);
-    each((d, i, e) => _styleAction(e, val, property, priority));
+    forEachElement((e) => _styleAction(e, val, property, priority));
   }
 
   void styleWithCallback(String property, SelectionCallback<String> fn,
       {String priority}) {
     assert(fn != null);
     each((d, i, e) =>
-        _styleAction(e, fn(scope.datum(e), i, e), property, priority));
+        _styleAction(e, fn(d, i, e), property, priority));
   }
 
   void _textAction(Element e, String v) {
@@ -251,12 +262,12 @@ class _SelectionImpl implements Selection {
   }
 
   void text(String val) {
-    each((d, i, e) => _textAction(e, val));
+    forEachElement((e) => _textAction(e, val));
   }
 
   void textWithCallback(SelectionCallback<String> fn) {
     assert(fn != null);
-    each((d, i, e) => _textAction(e, fn(scope.datum(e), i, e)));
+    each((d, i, e) => _textAction(e, fn(d, i, e)));
   }
 
   void _htmlAction(Element e, String v) {
@@ -264,15 +275,15 @@ class _SelectionImpl implements Selection {
   }
 
   void html(String val) {
-    each((d, i, e) => _htmlAction(e, val));
+    forEachElement((e) => _htmlAction(e, val));
   }
 
   void htmlWithCallback(SelectionCallback<String> fn) {
     assert(fn != null);
-    each((d, i, e) => _htmlAction(e, fn(scope.datum(e), i, e)));
+    each((d, i, e) => _htmlAction(e, fn(d, i, e)));
   }
 
-  void remove() => each((d, i, e) => e.remove());
+  void remove() => forEachElement((e) => e.remove());
 
   Selection select(String selector) {
     assert(selector != null && selector.isNotEmpty);
