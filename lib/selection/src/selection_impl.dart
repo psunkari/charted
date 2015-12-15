@@ -29,21 +29,40 @@ class _SelectionImpl implements Selection {
    * "element" itself passed as parameters.  [fn] must return an iterable of
    * elements to be used in each group.
    */
-  _SelectionImpl.all(
-      {String selector,
-      SelectionCallback<Iterable<Element>> fn,
-      SelectionScope this.scope,
-      Selection source}) {
-    assert(selector != null || fn != null);
+  _SelectionImpl.all(String selector, {this.scope, Selection source}) {
+    assert(!isNullOrEmpty(selector));
     assert(source != null || scope != null);
+    assert(source == null || scope == null);
 
-    if (selector != null) {
-      fn = (d, i, c) => c == null
-          ? scope.root.querySelectorAll(selector)
-          : c.querySelectorAll(selector);
+    var tmpGroups = <SelectionGroup>[];
+    if (source != null) {
+      scope = source.scope;
+      for (int gi = 0; gi < source.groups.length; ++gi) {
+        final g = source.groups.elementAt(gi);
+        for (int ei = 0; ei < g.elements.length; ++ei) {
+          final e = g.elements.elementAt(ei);
+          if (e != null) {
+            tmpGroups.add(new _SelectionGroupImpl(e.querySelectorAll(selector),
+                parent: e));
+          }
+        }
+      }
+    } else {
+      tmpGroups = [
+        new _SelectionGroupImpl(scope.root.querySelectorAll(selector),
+            parent: scope.root)
+      ];
     }
+    groups = tmpGroups;
+  }
 
-    var tmpGroups = new List<SelectionGroup>();
+  _SelectionImpl.allWithCallback(SelectionCallback<Iterable<Element>> fn,
+      {this.scope, Selection source}) {
+    assert(fn != null);
+    assert(source != null || scope != null);
+    assert(source == null || scope == null);
+
+    var tmpGroups = <SelectionGroup>[];
     if (source != null) {
       scope = source.scope;
       for (int gi = 0; gi < source.groups.length; ++gi) {
@@ -57,8 +76,9 @@ class _SelectionImpl implements Selection {
         }
       }
     } else {
-      tmpGroups
-          .add(new _SelectionGroupImpl(fn(null, 0, null), parent: scope.root));
+      tmpGroups = [
+        new _SelectionGroupImpl(fn(null, 0, null), parent: scope.root)
+      ];
     }
     groups = tmpGroups;
   }
@@ -68,58 +88,70 @@ class _SelectionImpl implements Selection {
    * [selector] is specified.  Otherwise, call [fn] which must return the
    * element to be selected.
    */
-  _SelectionImpl.single(
-      {String selector,
-      SelectionCallback<Element> fn,
-      SelectionScope this.scope,
-      Selection source}) {
-    assert(selector != null || fn != null);
+  _SelectionImpl.single(String selector, {this.scope, Selection source}) {
+    assert(!isNullOrEmpty(selector));
     assert(source != null || scope != null);
-
-    if (selector != null) {
-      fn = (d, i, c) => c == null
-          ? scope.root.querySelector(selector)
-          : c.querySelector(selector);
-    }
+    assert(source == null || scope == null);
 
     if (source != null) {
       scope = source.scope;
-      groups = new List<SelectionGroup>.generate(source.groups.length, (gi) {
-        SelectionGroup g = source.groups.elementAt(gi);
-        return new _SelectionGroupImpl(
-            new List.generate(g.elements.length, (ei) {
-              var e = g.elements.elementAt(ei);
-              if (e != null) {
+      groups = source.groups
+          .map((SelectionGroup g) => new _SelectionGroupImpl(
+              g.elements.map((Element e) {
+                if (e == null) return null;
                 var datum = scope.datum(e);
-                var enterElement = fn(datum, ei, e);
+                var selected = e.querySelector(selector);
                 if (datum != null) {
-                  scope.associate(enterElement, datum);
+                  scope.associate(selected, datum);
                 }
-                return enterElement;
-              } else {
-                return null;
-              }
-            }),
-            parent: g.parent);
-      });
+                return selected;
+              }).toList(growable: false),
+              parent: g.parent))
+          .toList(growable: false);
     } else {
-      groups = new List<SelectionGroup>.generate(
-          1,
-          (_) => new _SelectionGroupImpl(
-              new List.generate(1, (_) => fn(null, 0, null), growable: false)),
-          growable: false);
+      groups = <SelectionGroup>[
+        new _SelectionGroupImpl([scope.root.querySelector(selector)])
+      ];
+    }
+  }
+
+  _SelectionImpl.singleWithCallback(SelectionCallback<Element> fn,
+      {this.scope, Selection source}) {
+    assert(fn != null);
+    assert(source != null || scope != null);
+    assert(source == null || scope == null);
+
+    if (source != null) {
+      scope = source.scope;
+      groups = source.groups
+          .map((SelectionGroup g) => new _SelectionGroupImpl(
+              new List.generate(g.elements.length, (ei) {
+                var e = g.elements.elementAt(ei);
+                if (e == null) return null;
+                var datum = scope.datum(e);
+                var selected = fn(datum, ei, e);
+                if (datum != null) {
+                  scope.associate(selected, datum);
+                }
+                return selected;
+              }),
+              parent: g.parent))
+          .toList(growable: false);
+    } else {
+      groups = <SelectionGroup>[
+        new _SelectionGroupImpl([fn(null, 0, null)])
+      ];
     }
   }
 
   /** Creates a selection using the pre-computed list of [SelectionGroup] */
-  _SelectionImpl.selectionGroups(
-      Iterable<SelectionGroup> this.groups, SelectionScope this.scope);
+  _SelectionImpl.selectionGroups(this.groups, this.scope);
 
   /**
    * Creates a selection using the list of elements. All elements will
    * be part of the same group, with [SelectionScope.root] as the group's parent
    */
-  _SelectionImpl.elements(Iterable elements, SelectionScope this.scope) {
+  _SelectionImpl.elements(Iterable elements, this.scope) {
     groups = <SelectionGroup>[new _SelectionGroupImpl(elements)];
   }
 
@@ -211,7 +243,7 @@ class _SelectionImpl implements Selection {
   }
 
   void _attrAction(Element e, String v, String name) {
-    v == null ? e.attributes.remove(name) : e.attributes[name] = v;
+    v == null ? e.attributes.remove(name) : e.setAttribute(name, v);
   }
 
   void attr(String name, String val) {
@@ -238,8 +270,7 @@ class _SelectionImpl implements Selection {
     each((d, i, e) => _classedAction(e, fn(d, i, e), name));
   }
 
-  void _styleAction(
-      Element e, String value, String property, String priority) {
+  void _styleAction(Element e, String value, String property, String priority) {
     isNullOrEmpty(value)
         ? e.style.removeProperty(property)
         : e.style.setProperty(property, value, priority);
@@ -253,8 +284,7 @@ class _SelectionImpl implements Selection {
   void styleWithCallback(String property, SelectionCallback<String> fn,
       {String priority}) {
     assert(fn != null);
-    each((d, i, e) =>
-        _styleAction(e, fn(d, i, e), property, priority));
+    each((d, i, e) => _styleAction(e, fn(d, i, e), property, priority));
   }
 
   void _textAction(Element e, String v) {
@@ -287,23 +317,28 @@ class _SelectionImpl implements Selection {
 
   Selection select(String selector) {
     assert(selector != null && selector.isNotEmpty);
-    return new _SelectionImpl.single(selector: selector, source: this);
+    return new _SelectionImpl.single(selector, source: this);
   }
 
   Selection selectWithCallback(SelectionCallback<Element> fn) {
     assert(fn != null);
-    return new _SelectionImpl.single(fn: fn, source: this);
+    return new _SelectionImpl.singleWithCallback(fn, source: this);
   }
 
   Selection append(String tag) {
     assert(tag != null && tag.isNotEmpty);
-    return appendWithCallback(
-        (d, ei, e) => Namespace.createChildElement(tag, e));
+    Element specimen;
+    return new _SelectionImpl.singleWithCallback((datum, ei, e) {
+      Element child = specimen == null
+          ? specimen = Namespace.createChildElement(tag, e)
+          : specimen.clone(false);
+      return e.append(child);
+    }, source: this);
   }
 
   Selection appendWithCallback(SelectionCallback<Element> fn) {
     assert(fn != null);
-    return new _SelectionImpl.single(fn: (datum, ei, e) {
+    return new _SelectionImpl.singleWithCallback((datum, ei, e) {
       Element child = fn(datum, ei, e);
       return child == null ? null : e.append(child);
     }, source: this);
@@ -323,7 +358,7 @@ class _SelectionImpl implements Selection {
     assert(fn != null);
     beforeFn =
         before == null ? beforeFn : (d, ei, e) => e.querySelector(before);
-    return new _SelectionImpl.single(fn: (datum, ei, e) {
+    return new _SelectionImpl.singleWithCallback((datum, ei, e) {
       Element child = fn(datum, ei, e);
       Element before = beforeFn(datum, ei, e);
       return child == null ? null : e.insertBefore(child, before);
@@ -332,12 +367,12 @@ class _SelectionImpl implements Selection {
 
   Selection selectAll(String selector) {
     assert(selector != null && selector.isNotEmpty);
-    return new _SelectionImpl.all(selector: selector, source: this);
+    return new _SelectionImpl.all(selector, source: this);
   }
 
   Selection selectAllWithCallback(SelectionCallback<Iterable<Element>> fn) {
     assert(fn != null);
-    return new _SelectionImpl.all(fn: fn, source: this);
+    return new _SelectionImpl.allWithCallback(fn, source: this);
   }
 
   DataSelection data(Iterable vals, [SelectionKeyFunction keyFn]) {
@@ -357,7 +392,6 @@ class _SelectionImpl implements Selection {
       scope.associate(element, val);
       return element;
     }
-    ;
 
     // Joins data to all elements in the group.
     void join(SelectionGroup g, Iterable vals) {
@@ -513,16 +547,20 @@ class _EnterSelectionImpl implements EnterSelection {
 
   Selection append(String tag) {
     assert(tag != null && tag.isNotEmpty);
-    return appendWithCallback(
-        (d, ei, e) => Namespace.createChildElement(tag, e));
+    Element specimen;
+    return selectWithCallback((datum, ei, e) {
+      Element child = specimen == null
+          ? specimen = Namespace.createChildElement(tag, e)
+          : specimen.clone(false);
+      return e.append(child);
+    });
   }
 
   Selection appendWithCallback(SelectionCallback<Element> fn) {
     assert(fn != null);
     return selectWithCallback((datum, ei, e) {
       Element child = fn(datum, ei, e);
-      e.append(child);
-      return child;
+      return e.append(child);
     });
   }
 

@@ -27,7 +27,7 @@ class DataJoinBenchmark extends BenchmarkBase {
 
   @override
   void run() {
-    new SelectionScope.selector('body').selectAll('div').data(data);
+    new SelectionScope.selector('body').selectAll('div.outer').data(data);
   }
 
   @override
@@ -49,7 +49,7 @@ class EnterAppendBenchmark extends BenchmarkBase {
   @override
   void run() {
     var scope = new SelectionScope.selector('#benchmark-wrapper'),
-        selection = scope.selectAll('div').data(data);
+        selection = scope.selectAll('div.outer').data(data);
 
     selection.enter.append('div');
     selection

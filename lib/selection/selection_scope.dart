@@ -66,7 +66,7 @@ class SelectionScope {
    * have a null element.
    */
   Selection select(String selector) =>
-      new _SelectionImpl.single(selector: selector, scope: this);
+      new _SelectionImpl.single(selector, scope: this);
 
   /**
    * Creates a new [Selection] containing all elements matching [selector].
@@ -74,7 +74,7 @@ class SelectionScope {
    * elements in it.
    */
   Selection selectAll(String selector) =>
-      new _SelectionImpl.all(selector: selector, scope: this);
+      new _SelectionImpl.all(selector, scope: this);
 
   /**
    * Creates a new [Selection] containing [elements].  Assumes that
