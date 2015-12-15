@@ -57,8 +57,7 @@ class SelectionScope {
   datum(Object element) => element == null ? null : _associations[element];
 
   /** Associates data to the given [element]. */
-  associate(Object element, datum) =>
-      datum != null ? _associations[element] = datum : null;
+  associate(Object element, datum) => _associations[element] = datum;
 
   /**
    * Creates a new [Selection] containing the first element matching

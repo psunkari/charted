@@ -101,9 +101,7 @@ class _SelectionImpl implements Selection {
                 if (e == null) return null;
                 var datum = scope.datum(e);
                 var selected = e.querySelector(selector);
-                if (datum != null) {
-                  scope.associate(selected, datum);
-                }
+                scope.associate(selected, datum);
                 return selected;
               }).toList(growable: false),
               parent: g.parent))
@@ -130,9 +128,7 @@ class _SelectionImpl implements Selection {
                 if (e == null) return null;
                 var datum = scope.datum(e);
                 var selected = fn(datum, ei, e);
-                if (datum != null) {
-                  scope.associate(selected, datum);
-                }
+                scope.associate(selected, datum);
                 return selected;
               }),
               parent: g.parent))
@@ -380,18 +376,18 @@ class _SelectionImpl implements Selection {
     return dataWithCallback(toCallback(vals), keyFn);
   }
 
+  // Create a dummy node to be used with enter() selection.
+  Object _dummyElement(val) {
+    var element = new Object();
+    scope.associate(element, val);
+    return element;
+  }
+
   DataSelection dataWithCallback(SelectionCallback<Iterable> fn,
       [SelectionKeyFunction keyFn]) {
     assert(fn != null);
 
     var enterGroups = [], updateGroups = [], exitGroups = [];
-
-    // Create a dummy node to be used with enter() selection.
-    Object dummy(val) {
-      var element = new Object();
-      scope.associate(element, val);
-      return element;
-    }
 
     // Joins data to all elements in the group.
     void join(SelectionGroup g, Iterable vals) {
@@ -401,9 +397,9 @@ class _SelectionImpl implements Selection {
       // Nodes exiting, entering and updating in this group.
       // We maintain the nodes at the same index as they currently
       // are (for exiting) or where they should be (for entering and updating)
-      var update = new List(valuesLength),
-          enter = new List(valuesLength),
-          exit = new List(elementsLength);
+      final update = new List(valuesLength);
+      final enter = new List(valuesLength);
+      final exit = new List(elementsLength);
 
       // Use key function to determine DOMElement to data associations.
       if (keyFn != null) {
@@ -413,13 +409,15 @@ class _SelectionImpl implements Selection {
         // Used later to see if an element already exists for a key.
         for (int ei = 0, len = elementsLength; ei < len; ++ei) {
           final e = g.elements.elementAt(ei);
-          var keyValue = keyFn(scope.datum(e));
-          if (elementsByKey.containsKey(keyValue)) {
-            exit[ei] = e;
-          } else {
-            elementsByKey[keyValue] = e;
+          if (e != null) {
+            var keyValue = keyFn(scope.datum(e));
+            if (elementsByKey.containsKey(keyValue)) {
+              exit[ei] = e;
+            } else {
+              elementsByKey[keyValue] = e;
+            }
+            keysOnDOM.add(keyValue);
           }
-          keysOnDOM.add(keyValue);
         }
 
         // Iterate through the values and find values that don't have
@@ -432,7 +430,7 @@ class _SelectionImpl implements Selection {
             update[vi] = e;
             scope.associate(e, v);
           } else if (!valuesByKey.containsKey(keyValue)) {
-            enter[vi] = dummy(v);
+            enter[vi] = _dummyElement(v);
           }
           valuesByKey[keyValue] = v;
           elementsByKey.remove(keyValue);
@@ -459,13 +457,13 @@ class _SelectionImpl implements Selection {
             scope.associate(e, vals.elementAt(i));
             update[i] = e;
           } else {
-            enter[i] = dummy(vals.elementAt(i));
+            enter[i] = _dummyElement(vals.elementAt(i));
           }
         }
 
         // List of elements newly getting added
         for (int len = valuesLength; i < len; ++i) {
-          enter[i] = dummy(vals.elementAt(i));
+          enter[i] = _dummyElement(vals.elementAt(i));
         }
 
         // List of elements exiting this group
