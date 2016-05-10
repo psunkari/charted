@@ -129,7 +129,7 @@ class Hovercard implements ChartBehavior {
       ..opacity = '$EPSILON';
   }
 
-  void _handleStateChange(Iterable<ChangeRecord> changes) {
+  void _handleStateChange(Iterable changes) {
     _ensureHovercard();
 
     var value = _state.hovered;

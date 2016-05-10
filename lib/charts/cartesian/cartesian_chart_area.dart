@@ -6,12 +6,18 @@
 // https://developers.google.com/open-source/licenses/bsd
 //
 
-part of charted.charts;
+library charted.charts.cartesian.cartesian_chart_area;
+
+import 'dart:collection';
+import 'dart:html';
+
+import 'package:charted/charts/api.dart';
+import 'package:charted/core/utils.dart';
 
 /// Displays either one or two dimension axes and zero or more measure axis.
 /// The number of measure axes displayed is zero in charts like bubble chart
 /// which contain two dimension axes.
-class DefaultCartesianAreaImpl implements CartesianArea {
+class CartesianChartArea implements ChartArea {
   /// Default identifiers used by the measure axes
   static const MEASURE_AXIS_IDS = const ['_default'];
 
@@ -19,16 +25,16 @@ class DefaultCartesianAreaImpl implements CartesianArea {
   /// and the only dimension. Second, when "y" axis is the primary and the only
   /// dimension.
   static const MEASURE_AXIS_ORIENTATIONS = const [
-    const [ORIENTATION_LEFT, ORIENTATION_RIGHT],
-    const [ORIENTATION_BOTTOM, ORIENTATION_TOP]
+    const [Orientation.Left, Orientation.Right],
+    const [Orientation.Bottom, Orientation.Top]
   ];
 
   /// Orientations used by the dimension axes. First, when "x" is the
   /// primary dimension and the last one for cases where "y" axis is primary
   /// dimension.
   static const DIMENSION_AXIS_ORIENTATIONS = const [
-    const [ORIENTATION_BOTTOM, ORIENTATION_LEFT],
-    const [ORIENTATION_LEFT, ORIENTATION_BOTTOM]
+    const [Orientation.Bottom, Orientation.Left],
+    const [Orientation.Left, Orientation.Bottom]
   ];
 
   /// Mapping of measure axis Id to it's axis.
@@ -36,12 +42,6 @@ class DefaultCartesianAreaImpl implements CartesianArea {
 
   /// Mapping of dimension column index to it's axis.
   final _dimensionAxes = new LinkedHashMap<int, DefaultChartAxisImpl>();
-
-  /// Disposer for all change stream subscriptions related to data.
-  final _dataEventsDisposer = new SubscriptionsDisposer();
-
-  /// Disposer for all change stream subscriptions related to config.
-  final _configEventsDisposer = new SubscriptionsDisposer();
 
   @override
   final Element host;
@@ -75,7 +75,6 @@ class DefaultCartesianAreaImpl implements CartesianArea {
 
   ChartData _data;
   ChartConfig _config;
-  bool _autoUpdate = false;
 
   SelectionScope _scope;
   Selection _svg;
@@ -92,15 +91,8 @@ class DefaultCartesianAreaImpl implements CartesianArea {
   StreamController<ChartEvent> _valueMouseClickController;
   StreamController<ChartArea> _chartAxesUpdatedController;
 
-  DefaultCartesianAreaImpl(
-      this.host,
-      ChartData data,
-      ChartConfig config,
-      bool autoUpdate,
-      this.useTwoDimensionAxes,
-      this.useRowColoring,
-      this.state)
-      : _autoUpdate = autoUpdate {
+  CartesianChartArea(this.host, ChartData data, ChartConfig config,
+      {this.useTwoDimensionAxes, this.useRowColoring, this.state}) {
     assert(host != null);
     assert(isNotInline(host));
 
@@ -115,8 +107,6 @@ class DefaultCartesianAreaImpl implements CartesianArea {
   }
 
   void dispose() {
-    _configEventsDisposer.dispose();
-    _dataEventsDisposer.dispose();
     _config.legend.dispose();
 
     if (_valueMouseOverController != null) {
@@ -145,15 +135,7 @@ class DefaultCartesianAreaImpl implements CartesianArea {
   @override
   set data(ChartData value) {
     _data = value;
-    _dataEventsDisposer.dispose();
     _pendingLegendUpdate = true;
-
-    if (autoUpdate && _data != null && _data is Observable) {
-      _dataEventsDisposer.add((_data as Observable).changes.listen((_) {
-        _pendingLegendUpdate = true;
-        draw();
-      }));
-    }
   }
 
   @override
@@ -164,31 +146,11 @@ class DefaultCartesianAreaImpl implements CartesianArea {
   @override
   set config(ChartConfig value) {
     _config = value;
-    _configEventsDisposer.dispose();
     _pendingLegendUpdate = true;
-
-    if (_config != null && _config is Observable) {
-      _configEventsDisposer.add((_config as Observable).changes.listen((_) {
-        _pendingLegendUpdate = true;
-        draw();
-      }));
-    }
   }
 
   @override
   ChartConfig get config => _config;
-
-  @override
-  set autoUpdate(bool value) {
-    if (_autoUpdate != value) {
-      _autoUpdate = value;
-      this.data = _data;
-      this.config = _config;
-    }
-  }
-
-  @override
-  bool get autoUpdate => _autoUpdate;
 
   /// Gets measure axis from cache - creates a new instance of _ChartAxis
   /// if one was not already created for the given [axisId].
@@ -679,7 +641,7 @@ class _ChartSeriesInfo {
   SubscriptionsDisposer _disposer = new SubscriptionsDisposer();
 
   DefaultChartSeriesImpl _series;
-  DefaultCartesianAreaImpl _area;
+  CartesianChartArea _area;
   _ChartSeriesInfo(this._area, this._series);
 
   _click(ChartEvent e) {

@@ -6,12 +6,22 @@
 // https://developers.google.com/open-source/licenses/bsd
 //
 
-part of charted.charts;
+library charted.charts.cartesian.renderers.bubble_chart_renderer;
+
+import 'dart:html' show Element;
+import 'dart:svg' show GElement;
+import 'dart:async';
+
+import 'package:quiver/core.dart';
+
+import 'package:charted/charts/cartesian.dart';
+import 'package:charted/core/utils.dart';
+import 'package:charted/selection/selection.dart';
 
 abstract class CartesianRendererBase implements CartesianRenderer {
   final SubscriptionsDisposer _disposer = new SubscriptionsDisposer();
 
-  CartesianArea area;
+  CartesianChartArea area;
   ChartSeries series;
   ChartTheme theme;
   ChartState state;
@@ -32,7 +42,7 @@ abstract class CartesianRendererBase implements CartesianRenderer {
   StreamController<ChartEvent> mouseOutController;
   StreamController<ChartEvent> mouseClickController;
 
-  void _ensureAreaAndSeries(CartesianArea area, ChartSeries series) {
+  void ensureAreaAndSeries(CartesianChartArea area, ChartSeries series) {
     assert(area != null && series != null);
     assert(this.area == null || this.area == area);
     if (this.area == null) {
@@ -48,7 +58,7 @@ abstract class CartesianRendererBase implements CartesianRenderer {
     this.series = series;
   }
 
-  void _ensureReadyToDraw(Element element) {
+  void ensureReadyToDraw(Element element) {
     assert(series != null && area != null);
     assert(element != null && element is GElement);
 
@@ -74,7 +84,7 @@ abstract class CartesianRendererBase implements CartesianRenderer {
   }
 
   /// Override this method to handle state changes.
-  void handleStateChanges(List<ChangeRecord> changes);
+  void handleStateChanges(List changes);
 
   @override
   Extent get extent {
@@ -155,12 +165,12 @@ abstract class CartesianRendererBase implements CartesianRenderer {
           if (state.highlights.isNotEmpty) {
             flags |= (state.highlights.any((x) => x.first == column)
                 ? ChartState.COL_HIGHLIGHTED
-                : ChartState.COL_UNHIGHLIGHTED);
+                : ChartState.COL_NOT_HIGHLIGHTED);
           }
           if (state.selection.isNotEmpty) {
             flags |= (state.isSelected(column)
                 ? ChartState.COL_SELECTED
-                : ChartState.COL_UNSELECTED);
+                : ChartState.COL_NOT_SELECTED);
           }
           if (!state.isVisible(column)) {
             flags |= ChartState.COL_HIDDEN;
@@ -186,14 +196,14 @@ abstract class CartesianRendererBase implements CartesianRenderer {
 
         if (flags & ChartState.COL_SELECTED != 0) {
           styles.add(ChartState.COL_SELECTED_CLASS);
-        } else if (flags & ChartState.COL_UNSELECTED != 0) {
-          styles.add(ChartState.COL_UNSELECTED_CLASS);
+        } else if (flags & ChartState.COL_NOT_SELECTED != 0) {
+          styles.add(ChartState.COL_NOT_SELECTED_CLASS);
         }
 
         if (flags & ChartState.COL_HIGHLIGHTED != 0) {
           styles.add(ChartState.COL_HIGHLIGHTED_CLASS);
-        } else if (flags & ChartState.COL_UNHIGHLIGHTED != 0) {
-          styles.add(ChartState.COL_UNHIGHLIGHTED_CLASS);
+        } else if (flags & ChartState.COL_NOT_HIGHLIGHTED != 0) {
+          styles.add(ChartState.COL_NOT_HIGHLIGHTED_CLASS);
         }
 
         if (flags & ChartState.COL_HOVERED != 0) {
@@ -228,7 +238,7 @@ abstract class CartesianRendererBase implements CartesianRenderer {
         if (state.highlights.isNotEmpty) {
           styles.add(state.highlights.any((x) => x.last == row)
               ? ChartState.VAL_HIGHLIGHTED_CLASS
-              : ChartState.VAL_UNHIGHLIGHTED_CLASS);
+              : ChartState.VAL_NOT_HIGHLIGHTED_CLASS);
         }
         if (state.hovered != null && state.hovered.last == row) {
           styles.add(ChartState.VAL_HOVERED_CLASS);
@@ -265,7 +275,7 @@ abstract class CartesianRendererBase implements CartesianRenderer {
       if (state.highlights.isNotEmpty) {
         flags |= (state.highlights.any((x) => x.last == row)
             ? ChartState.VAL_HIGHLIGHTED
-            : ChartState.VAL_UNHIGHLIGHTED);
+            : ChartState.VAL_NOT_HIGHLIGHTED);
       }
       if (state.hovered != null && state.hovered.last == row) {
         flags |= ChartState.VAL_HOVERED;

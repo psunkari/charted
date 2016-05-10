@@ -58,7 +58,7 @@ class ChartDemo {
     area = isLayout
         ? new LayoutArea(chartAreaHost, data, config, state: state)
         : new CartesianArea(chartAreaHost, data, config,
-            autoUpdate: false, useTwoDimensionAxes: useTwoDimensions,
+            useTwoDimensionAxes: useTwoDimensions,
             state: state);
 
     behaviors.forEach((behavior) {

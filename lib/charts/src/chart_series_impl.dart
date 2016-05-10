@@ -8,7 +8,7 @@
 
 part of charted.charts;
 
-class DefaultChartSeriesImpl extends ChangeNotifier implements ChartSeries {
+class DefaultChartSeriesImpl implements ChartSeries {
   final String name;
 
   Iterable<String> _measureAxisIds;
@@ -27,27 +27,16 @@ class DefaultChartSeriesImpl extends ChangeNotifier implements ChartSeries {
     if (value != null && value == _renderer) return;
     _renderer.dispose();
     _renderer = value;
-    notifyChange(new ChartSeriesChangeRecord(this));
   }
 
   ChartRenderer get renderer => _renderer;
 
   set measures(Iterable<int> value) {
     _measures = value;
-
-    if (_measures is ObservableList) {
-      _disposer.add(
-          (_measures as ObservableList).listChanges.listen(_measuresChanged));
-    }
   }
 
   Iterable<int> get measures => _measures;
 
   set measureAxisIds(Iterable<String> value) => _measureAxisIds = value;
   Iterable<String> get measureAxisIds => _measureAxisIds;
-
-  _measuresChanged(_) {
-    if (_measures is! ObservableList) return;
-    notifyChange(new ChartSeriesChangeRecord(this));
-  }
 }

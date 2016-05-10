@@ -1,8 +1,10 @@
 library charted.benchmarks.line_chart;
 
-import 'package:charted/charted.dart';
 import 'dart:html';
 import 'dart:math';
+
+import 'package:charted/charts/cartesian.dart';
+import 'package:charted/core/utils.dart';
 
 /// Helper method to create default behaviors for cartesian chart demos.
 Iterable<ChartBehavior> createDefaultCartesianBehaviors() =>
@@ -51,7 +53,7 @@ List<ChartColumnSpec> generateColumnSpecs(List<Map<String, int>> data) => data[
     .toList();
 
 /// Draw a line chart.
-void line(List<ChartColumnSpec> columns, List<Map<String, int>> data) {
+void line(List<ChartColumnSpec> columns, List<Iterable> data) {
   var outerElement = document.querySelector('#charts-container'),
       wrapper = createChartWrapper(),
       areaHost = wrapper.querySelector('.chart-host'),
@@ -59,13 +61,13 @@ void line(List<ChartColumnSpec> columns, List<Map<String, int>> data) {
 
   outerElement.append(wrapper);
 
-  var series = new ChartSeries("one", [1, 2], new LineChartRenderer()),
-      config = new ChartConfig([series], [0])
+  var series = new MutableChartSeries("one", [1, 2], new LineChartRenderer()),
+      config = new MutableChartConfig([series], [0])
         ..legend = new ChartLegend(legendHost),
-      chartData = new ChartData(columns, data),
+      chartData = new MutableChartData(columns, data),
       state = new ChartState();
 
-  var area = new CartesianArea(areaHost, chartData, config, state: state);
+  var area = new CartesianChartArea(areaHost, chartData, config, state: state);
   createDefaultCartesianBehaviors().forEach((behavior) {
     area.addChartBehavior(behavior);
   });

@@ -8,7 +8,7 @@
 
 part of charted.charts;
 
-class DefaultChartConfigImpl extends ChangeNotifier implements ChartConfig {
+class MutableChartConfig implements ChartConfig {
   final Map<String, ChartAxisConfig> _measureAxisRegistry = {};
   final Map<int, ChartAxisConfig> _dimensionAxisRegistry = {};
   final SubscriptionsDisposer _disposer = new SubscriptionsDisposer();
@@ -16,7 +16,6 @@ class DefaultChartConfigImpl extends ChangeNotifier implements ChartConfig {
   bool _isRTL = false;
   Iterable<ChartSeries> _series;
   Iterable<int> _dimensions;
-  StreamSubscription _dimensionsSubscription;
 
   @override
   Rect minimumSize = const Rect.size(400, 300);
@@ -39,7 +38,7 @@ class DefaultChartConfigImpl extends ChangeNotifier implements ChartConfig {
   @override
   bool switchAxesForRTL = true;
 
-  DefaultChartConfigImpl(
+  MutableChartConfig(
       Iterable<ChartSeries> series, Iterable<int> dimensions) {
     this.series = series;
     this.dimensions = dimensions;
@@ -48,37 +47,8 @@ class DefaultChartConfigImpl extends ChangeNotifier implements ChartConfig {
   @override
   set series(Iterable<ChartSeries> values) {
     assert(values != null && values.isNotEmpty);
-
     _disposer.dispose();
     _series = values;
-    notifyChange(const ChartConfigChangeRecord());
-
-    // Monitor each series for changes on them
-    values.forEach((item) {
-      if (item is Observable) {
-        _disposer.add(
-            item.changes
-                .listen((_) => notifyChange(const ChartConfigChangeRecord())),
-            item);
-      }
-    });
-
-    // Monitor series for changes.  When the list changes, update
-    // subscriptions to ChartSeries changes.
-    if (_series is ObservableList) {
-      var observable = _series as ObservableList;
-      _disposer.add(observable.listChanges.listen((records) {
-        records.forEach((record) {
-          record.removed.forEach((value) => _disposer.unsubscribe(value));
-          for (int i = 0; i < record.addedCount; i++) {
-            var added = observable[i + record.index];
-            _disposer.add(added.changes
-                .listen((_) => notifyChange(const ChartConfigChangeRecord())));
-          }
-        });
-        notifyChange(const ChartConfigChangeRecord());
-      }));
-    }
   }
 
   @override
@@ -87,19 +57,6 @@ class DefaultChartConfigImpl extends ChangeNotifier implements ChartConfig {
   @override
   set dimensions(Iterable<int> values) {
     _dimensions = values;
-
-    if (_dimensionsSubscription != null) {
-      _dimensionsSubscription.cancel();
-      _dimensionsSubscription = null;
-    }
-
-    if (values == null || values.isEmpty) return;
-
-    if (_dimensions is ObservableList) {
-      _dimensionsSubscription = (_dimensions as ObservableList)
-          .listChanges
-          .listen((_) => notifyChange(const ChartConfigChangeRecord()));
-    }
   }
 
   @override
@@ -127,10 +84,7 @@ class DefaultChartConfigImpl extends ChangeNotifier implements ChartConfig {
 
   @override
   set isRTL(bool value) {
-    if (_isRTL != value && value != null) {
-      _isRTL = value;
-      notifyChange(const ChartConfigChangeRecord());
-    }
+    _isRTL = value;
   }
 
   @override

@@ -43,7 +43,6 @@ class DefaultLayoutAreaImpl implements LayoutArea {
 
   ChartData _data;
   ChartConfig _config;
-  bool _autoUpdate = false;
 
   SelectionScope _scope;
   Selection _svg;
@@ -60,8 +59,7 @@ class DefaultLayoutAreaImpl implements LayoutArea {
   StreamController<ChartEvent> _valueMouseOutController;
   StreamController<ChartEvent> _valueMouseClickController;
 
-  DefaultLayoutAreaImpl(this.host, ChartData data, ChartConfig config,
-      this._autoUpdate, this.state) {
+  DefaultLayoutAreaImpl(this.host, ChartData data, ChartConfig config, this.state) {
     assert(host != null);
     assert(isNotInline(host));
 
@@ -89,13 +87,6 @@ class DefaultLayoutAreaImpl implements LayoutArea {
   @override
   set data(ChartData value) {
     _data = value;
-    _dataEventsDisposer.dispose();
-
-    if (autoUpdate && _data != null && _data is Observable) {
-      _dataEventsDisposer.add((_data as Observable).changes.listen((_) {
-        draw();
-      }));
-    }
   }
 
   @override
@@ -106,31 +97,11 @@ class DefaultLayoutAreaImpl implements LayoutArea {
   @override
   set config(ChartConfig value) {
     _config = value;
-    _configEventsDisposer.dispose();
     _pendingLegendUpdate = true;
-
-    if (_config != null && _config is Observable) {
-      _configEventsDisposer.add((_config as Observable).changes.listen((_) {
-        _pendingLegendUpdate = true;
-        draw();
-      }));
-    }
   }
 
   @override
   ChartConfig get config => _config;
-
-  @override
-  set autoUpdate(bool value) {
-    if (_autoUpdate != value) {
-      _autoUpdate = value;
-      this.data = _data;
-      this.config = _config;
-    }
-  }
-
-  @override
-  bool get autoUpdate => _autoUpdate;
 
   /// Computes the size of chart and if changed from the previous time
   /// size was computed, sets attributes on svg element

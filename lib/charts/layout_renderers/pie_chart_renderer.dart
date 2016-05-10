@@ -157,7 +157,7 @@ class PieChartRenderer extends LayoutRendererBase {
       stylesForValue(row, isTail: row == SMALL_INT_MAX);
 
   @override
-  handleStateChanges(List<ChangeRecord> changes) {
+  handleStateChanges(List changes) {
     root.selectAll('.pie-path').each((d, i, e) {
       var styles = stylesForData(d.data, i);
       e.classes.removeAll(ChartState.VALUE_CLASS_NAMES);

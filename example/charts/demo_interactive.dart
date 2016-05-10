@@ -10,7 +10,7 @@ library charted.demo.interactive;
 
 import 'dart:html';
 import 'package:observe/observe.dart';
-import 'package:charted/charts/charts.dart';
+import 'package:charted/charts/cartesian.dart';
 
 import 'demo_charts.dart';
 
@@ -54,7 +54,7 @@ main() {
 
   CartesianArea area =
       new CartesianArea(querySelector('.chart-host'),
-          data, config, autoUpdate: true, useTwoDimensionAxes: false);
+          data, config, useTwoDimensionAxes: false);
 
   area.addChartBehavior(new ChartTooltip());
   config.legend = new ChartLegend(querySelector('.chart-legend-host'));

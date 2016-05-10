@@ -6,7 +6,15 @@
 // https://developers.google.com/open-source/licenses/bsd
 //
 
-part of charted.charts;
+library charted.charts.cartesian.behaviors.axis_label_tooltip;
+
+import 'dart:html' show Element, MouseEvent;
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:charted/charts/cartesian.dart';
+import 'package:charted/core/utils.dart';
+import 'package:charted/selection/selection.dart';
 
 /// A behavior that draws marking lines on the chart.
 class AxisLabelTooltip implements ChartBehavior {
@@ -14,14 +22,14 @@ class AxisLabelTooltip implements ChartBehavior {
 
   SubscriptionsDisposer _disposer = new SubscriptionsDisposer();
   StreamSubscription _axesChangeSubscription;
-  CartesianArea _area;
+  CartesianChartArea _area;
   Element _tooltipRoot;
 
   math.Rectangle _hostAreaRect;
   math.Rectangle _renderAreaRect;
 
   void init(ChartArea area, Selection upper, Selection lower) {
-    if (area is! CartesianArea) return;
+    if (area is! CartesianChartArea) return;
     _area = area;
     _axesChangeSubscription =
         _area.onChartAxesUpdated.listen((_) => _subscribe());

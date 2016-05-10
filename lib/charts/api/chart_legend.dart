@@ -1,12 +1,11 @@
 //
-// Copyright 2014 Google Inc. All rights reserved.
+// Copyright 2014,2015 Google Inc. All rights reserved.
 //
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 //
-
-part of charted.charts;
+part of charted.charts.api;
 
 ///
 /// Interface that is implemented by classes that support
@@ -21,11 +20,6 @@ abstract class ChartLegend {
 
   /// Called by [ChartArea] to dispose selection listeners.
   dispose();
-
-  /// Factory to create an instance of the default implementation.
-  factory ChartLegend(Element host,
-          {maxItems: 0, title: '', showValues: false}) =>
-      new DefaultChartLegendImpl(host, maxItems, showValues, title);
 }
 
 ///

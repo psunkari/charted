@@ -67,7 +67,7 @@ abstract class LayoutRendererBase implements LayoutRenderer {
     _computeValueStates();
   }
 
-  void handleStateChanges(List<ChangeRecord> changes);
+  void handleStateChanges(List changes);
 
   @override
   void dispose() {

@@ -37,7 +37,7 @@ main() {
       data = new ChartData(COLUMNS, DATA),
       config = new ChartConfig([series1], [0]),
       area = new CartesianArea(querySelector('.default'),
-          data, config, autoUpdate:false, useTwoDimensionAxes:false);
+          data, config, useTwoDimensionAxes:false);
   area.draw();
 
   // Chart with custom measure axis with specific domain on the scale.
@@ -57,7 +57,7 @@ main() {
 
   config2.registerMeasureAxis('fixed_domain', axisConfig);
   var customAxisChart = new CartesianArea(querySelector('.custom-domain'),
-          data2, config2, autoUpdate:false, useTwoDimensionAxes:false);
+          data2, config2, useTwoDimensionAxes:false);
   customAxisChart.draw();
 
   // Chart with custom measure axis with specific tick values.
@@ -78,6 +78,6 @@ main() {
 
   config3.registerMeasureAxis('fixed_ticks', axisConfig2);
   var fixedTickValueChart = new CartesianArea(querySelector('.custom-ticks'),
-          data3, config3, autoUpdate:false, useTwoDimensionAxes:false);
+          data3, config3, useTwoDimensionAxes:false);
   fixedTickValueChart.draw();
 }

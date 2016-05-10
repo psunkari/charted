@@ -1,75 +1,19 @@
 //
-// Copyright 2014 Google Inc. All rights reserved.
+// Copyright 2014,2015 Google Inc. All rights reserved.
 //
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 //
 
-part of charted.charts;
+part of charted.charts.api;
 
 /// Theme used to render the chart area, specifically colors and axes.
 ///
 /// Typical implementations of ChartTheme also implement theme interfaces
 /// used by the renderers, tooltips, legends and any other behaviors.
-abstract class ChartTheme {
-  static ChartTheme current = new QuantumChartTheme();
-
-  /// Column/series when it is disabled, possibly because another is active
-  static const int STATE_INACTIVE = 0;
-
-  /// Column/Series that is normal
-  static const int STATE_NORMAL = 1;
-
-  /// Column/series that is active, possibly by a click
-  static const int STATE_ACTIVE = 2;
-
-  /// Color that can be used for key.
-  /// For a given input key, the output is always the same.
-  String getColorForKey(key, [int state]);
-
-  /// Markup for filters that is added to all chart elements. These filters
-  /// can be referenced using url() in values returned by [getFilterForState].
-  String filters;
-
-  /// Returns any filters that must be applied based on the element's state
-  String getFilterForState(int state);
-
-  /// Color for overflow and other items.
-  /// For example, the collect all bucket used by pie-chart.
-  String getOtherColor([int state]);
-
-  /// Width of the separator between two chart elements.
-  /// Used to separate pies in pie-chart, bars in grouped and stacked charts.
-  int get defaultSeparatorWidth => 1;
-
-  /// Stroke width used by all shapes.
-  int get defaultStrokeWidth => 2;
-
-  /// Default font for computation of text metrics
-  String get defaultFont;
-
-  /// Easing function for the transition
-  EasingFunction get transitionEasingType => Transition.defaultEasingType;
-
-  /// Easing mode for the transition
-  EasingModeFunction get transitionEasingMode => Transition.defaultEasingMode;
-
-  /// Total duration of the transition in milli-seconds
-  int get transitionDurationMilliseconds => 250;
-
-  /// Theme passed to the measure axes - only used by cartesian charts
-  ChartAxisTheme getMeasureAxisTheme([Scale scale]) => null;
-
-  /// Theme passed to the dimension axes - only used by cartesian charts
-  ChartAxisTheme getDimensionAxisTheme([Scale scale]) => null;
-
-  /// Padding around the rendered chart. Defaults to 10px in all directions
-  AbsoluteRect get padding => const AbsoluteRect(10, 10, 10, 10);
-}
-
 abstract class ChartAxisTheme {
-  /// Treshold for tick length.  Setting [axisTickSize] <= [FILL_RENDER_AREA]
+  /// Threshold for tick length.  Setting [axisTickSize] <= [FILL_RENDER_AREA]
   /// will make the axis span the entire height/width of the rendering area.
   static const int FILL_RENDER_AREA = SMALL_INT_MIN;
 
@@ -135,3 +79,58 @@ abstract class ChartAxisTheme {
   /// When not specified, SVGTextElement's metrics API will be used.
   String get ticksFont => null;
 }
+
+abstract class ChartTheme {
+  /// Column/series when it is disabled, possibly because another is active
+  static const int STATE_INACTIVE = 0;
+
+  /// Column/Series that is normal
+  static const int STATE_NORMAL = 1;
+
+  /// Column/series that is active, possibly by a click
+  static const int STATE_ACTIVE = 2;
+
+  /// Color that can be used for key.
+  /// For a given input key, the output is always the same.
+  String getColorForKey(key, [int state]);
+
+  /// Markup for filters that is added to all chart elements. These filters
+  /// can be referenced using url() in values returned by [getFilterForState].
+  String filters;
+
+  /// Returns any filters that must be applied based on the element's state
+  String getFilterForState(int state);
+
+  /// Color for overflow and other items.
+  /// For example, the collect all bucket used by pie-chart.
+  String getOtherColor([int state]);
+
+  /// Width of the separator between two chart elements.
+  /// Used to separate pies in pie-chart, bars in grouped and stacked charts.
+  int get defaultSeparatorWidth => 1;
+
+  /// Stroke width used by all shapes.
+  int get defaultStrokeWidth => 2;
+
+  /// Default font for computation of text metrics
+  String get defaultFont;
+
+  /// Easing function for the transition
+  EasingFunction get transitionEasingType => Transition.defaultEasingType;
+
+  /// Easing mode for the transition
+  EasingModeFunction get transitionEasingMode => Transition.defaultEasingMode;
+
+  /// Total duration of the transition in milli-seconds
+  int get transitionDurationMilliseconds => 250;
+
+  /// Padding around the rendered chart. Defaults to 10px in all directions
+  AbsoluteRect get padding => const AbsoluteRect(10, 10, 10, 10);
+
+  /// Theme passed to the measure axes - only used by cartesian charts
+  ChartAxisTheme getMeasureAxisTheme([Scale scale]) => null;
+
+  /// Theme passed to the dimension axes - only used by cartesian charts
+  ChartAxisTheme getDimensionAxisTheme([Scale scale]) => null;
+}
+

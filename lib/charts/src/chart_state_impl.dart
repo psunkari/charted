@@ -14,7 +14,7 @@ part of charted.charts;
 /// - In [CartesianArea] it is always a column.
 /// - In [LayoutArea] renders choose either columns or rows.
 ///
-class DefaultChartStateImpl extends ChangeNotifier implements ChartState {
+class ObservableChartState implements ChartState, ChangeNotifier {
   final bool isMultiSelect;
   final bool isMultiHighlight;
   final bool isSelectOrHighlight;
@@ -28,6 +28,8 @@ class DefaultChartStateImpl extends ChangeNotifier implements ChartState {
   LinkedHashSet<int> selection = new LinkedHashSet<int>();
   LinkedHashSet<Pair<int, int>> highlights =
       new LinkedHashSet<Pair<int, int>>();
+
+  StreamController _changeStreamController = new StreamController.broadcast();
 
   Pair<int, int> _hovered;
   int _preview;
@@ -45,7 +47,7 @@ class DefaultChartStateImpl extends ChangeNotifier implements ChartState {
     if (!this.supportValueHover) return null;
     if (value != _hovered) {
       _hovered = value;
-      notifyChange(new ChartHoverChangeRecord(_hovered));
+      // notifyChange(new ChartHoverChangeRecord(_hovered));
     }
     return value;
   }
@@ -56,7 +58,7 @@ class DefaultChartStateImpl extends ChangeNotifier implements ChartState {
     if (!this.supportColumnPreview) return null;
     if (value != _preview) {
       _preview = value;
-      notifyChange(new ChartPreviewChangeRecord(_preview));
+      // notifyChange(new ChartPreviewChangeRecord(_preview));
     }
     return value;
   }
@@ -66,7 +68,7 @@ class DefaultChartStateImpl extends ChangeNotifier implements ChartState {
   bool unhide(int id) {
     if (hidden.contains(id)) {
       hidden.remove(id);
-      notifyChange(new ChartVisibilityChangeRecord(unhide: id));
+      // notifyChange(new ChartVisibilityChangeRecord(unhide: id));
     }
     return true;
   }
@@ -74,7 +76,7 @@ class DefaultChartStateImpl extends ChangeNotifier implements ChartState {
   bool hide(int id) {
     if (!hidden.contains(id)) {
       hidden.add(id);
-      notifyChange(new ChartVisibilityChangeRecord(hide: id));
+      // notifyChange(new ChartVisibilityChangeRecord(hide: id));
     }
     return false;
   }
@@ -91,7 +93,7 @@ class DefaultChartStateImpl extends ChangeNotifier implements ChartState {
         highlights.clear();
       }
       selection.add(id);
-      notifyChange(new ChartSelectionChangeRecord(add: id));
+      // notifyChange(new ChartSelectionChangeRecord(add: id));
     }
     return true;
   }
@@ -99,7 +101,7 @@ class DefaultChartStateImpl extends ChangeNotifier implements ChartState {
   bool unselect(int id) {
     if (selection.contains(id)) {
       selection.remove(id);
-      notifyChange(new ChartSelectionChangeRecord(remove: id));
+      // notifyChange(new ChartSelectionChangeRecord(remove: id));
     }
     return false;
   }
@@ -117,7 +119,7 @@ class DefaultChartStateImpl extends ChangeNotifier implements ChartState {
       }
       var item = new Pair(column, row);
       highlights.add(item);
-      notifyChange(new ChartHighlightChangeRecord(add: item));
+      // notifyChange(new ChartHighlightChangeRecord(add: item));
     }
     return true;
   }
@@ -126,11 +128,13 @@ class DefaultChartStateImpl extends ChangeNotifier implements ChartState {
     if (isHighlighted(column, row)) {
       var item = new Pair(column, row);
       highlights.remove(item);
-      notifyChange(new ChartHighlightChangeRecord(remove: item));
+      // notifyChange(new ChartHighlightChangeRecord(remove: item));
     }
     return false;
   }
 
   bool isHighlighted(int column, int row) =>
       highlights.any((x) => x.first == column && x.last == row);
+
+  Stream get changes => _changeStreamController.stream;
 }

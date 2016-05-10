@@ -6,7 +6,15 @@
 // https://developers.google.com/open-source/licenses/bsd
 //
 
-part of charted.charts;
+library charted.charts.cartesian.renderers.bar_chart_renderer;
+
+import 'dart:html';
+import 'dart:async';
+
+import 'package:charted/charts/api.dart';
+import 'package:charted/core/utils.dart';
+
+import 'cartesian_base_renderer.dart';
 
 class BarChartRenderer extends CartesianRendererBase {
   static const RADIUS = 2;
@@ -201,7 +209,7 @@ class BarChartRenderer extends CartesianRendererBase {
   }
 
   @override
-  void handleStateChanges(List<ChangeRecord> changes) {
+  void handleStateChanges(List changes) {
     var groups = host.querySelectorAll('.bar-rdr-rowgroup');
     if (groups == null || groups.isEmpty) return;
 

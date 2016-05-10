@@ -6,7 +6,15 @@
 // https://developers.google.com/open-source/licenses/bsd
 //
 
-part of charted.charts;
+library charted.charts.cartesian.renderers.line_chart_renderer;
+
+import 'dart:html';
+import 'dart:async';
+
+import 'package:charted/charts/api.dart';
+import 'package:charted/core/utils.dart';
+
+import 'cartesian_base_renderer.dart';
 
 class LineChartRenderer extends CartesianRendererBase {
   final Iterable<int> dimensionsUsingBand = const [];
@@ -122,7 +130,7 @@ class LineChartRenderer extends CartesianRendererBase {
   }
 
   @override
-  void handleStateChanges(List<ChangeRecord> changes) {
+  void handleStateChanges(List changes) {
     var lines = host.querySelectorAll('.line-rdr-line');
     if (lines == null || lines.isEmpty) return;
 

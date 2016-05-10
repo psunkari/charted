@@ -6,9 +6,19 @@
 // https://developers.google.com/open-source/licenses/bsd
 //
 
-part of charted.charts;
+library charted.charts.cartesian.renderers.stacked_bar_chart_renderer;
 
-class StackedBarChartRenderer extends CartesianRendererBase {
+import 'dart:html';
+import 'dart:async';
+
+import 'package:charted/charts/api.dart';
+import 'package:charted/core/utils.dart';
+import 'package:charted/charts/cartesian/cartesian_chart_area.dart';
+
+import 'cartesian_base_renderer.dart';
+
+class StackedBarChartRenderer extends CartesianRendererBase
+    implements ChartRenderer {
   static const RADIUS = 2;
 
   final Iterable<int> dimensionsUsingBand = const [0];
@@ -18,7 +28,7 @@ class StackedBarChartRenderer extends CartesianRendererBase {
   final String name = "stack-rdr";
 
   /// Used to capture the last measure with data in a data row.  This is used
-  /// to decided whether to round the cornor of the bar or not.
+  /// to decided whether to round the corner of the bar or not.
   List<int> _lastMeasureWithData = [];
 
   StackedBarChartRenderer({this.alwaysAnimate: false});
@@ -26,14 +36,14 @@ class StackedBarChartRenderer extends CartesianRendererBase {
   /// Returns false if the number of dimension axes on the area is 0.
   /// Otherwise, the first dimension scale is used to render the chart.
   @override
-  bool prepare(CartesianArea area, ChartSeries series) {
-    _ensureAreaAndSeries(area, series);
+  bool prepare(CartesianChartArea area, ChartSeries series) {
+    ensureAreaAndSeries(area, series);
     return true;
   }
 
   @override
   void draw(Element element, {Future schedulePostRender}) {
-    _ensureReadyToDraw(element);
+    ensureReadyToDraw(element);
     var verticalBars = !area.config.isLeftAxisPrimary;
 
     var measuresCount = series.measures.length,
@@ -283,7 +293,7 @@ class StackedBarChartRenderer extends CartesianRendererBase {
   }
 
   @override
-  void handleStateChanges(List<ChangeRecord> changes) {
+  void handleStateChanges(List changes) {
     var groups = host.querySelectorAll('.stack-rdr-rowgroup');
     if (groups == null || groups.isEmpty) return;
 

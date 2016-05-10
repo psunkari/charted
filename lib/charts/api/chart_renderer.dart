@@ -1,12 +1,11 @@
 //
-// Copyright 2014 Google Inc. All rights reserved.
+// Copyright 2014,2015 Google Inc. All rights reserved.
 //
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 //
-
-part of charted.charts;
+part of charted.charts.api;
 
 ///
 /// Renders the chart on a CartesianArea.
@@ -56,7 +55,7 @@ abstract class LayoutRenderer extends ChartRenderer {
 ///
 /// Common interface for all renderers in Charted
 ///
-abstract class ChartRenderer extends ChartRendererBehaviorSource {
+abstract class ChartRenderer {
   /// Name of the renderer.
   /// The name can only include chars that are allowed in the CSS for selectors.
   String get name;
@@ -66,7 +65,17 @@ abstract class ChartRenderer extends ChartRendererBehaviorSource {
   /// - [series] represents the [ChartSeries] that is rendered
   bool prepare(ChartArea area, ChartSeries series);
 
+  /// Stream to notify when a rendered value is clicked.
+  Stream<ChartEvent> get onValueClick;
+
+  /// Stream to notify when user moves mouse over a rendered value
+  Stream<ChartEvent> get onValueMouseOver;
+
+  /// Stream to notify when user moves mouse out of rendered value
+  Stream<ChartEvent> get onValueMouseOut;
+
   /// Clears DOM created by this renderer and releases
   /// references to passed objects.
   void dispose();
 }
+
