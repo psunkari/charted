@@ -30,7 +30,7 @@ abstract class ChartTheme {
 
   /// Markup for filters that is added to all chart elements. These filters
   /// can be referenced using url() in values returned by [getFilterForState].
-  String filters;
+  String get filters;
 
   /// Returns any filters that must be applied based on the element's state
   String getFilterForState(int state);
@@ -84,12 +84,9 @@ abstract class ChartAxisTheme {
   /// Space between axis and label for dimension axes
   int get axisTickPadding;
 
-  /// Space between the first tick and the measure axes.
+  /// Space between the first tick and the measure axes in pixels.
   /// Only used on charts that don't have renderers that use "bands" of space
   /// on the dimension axes
-  ///
-  /// Represented as a percentage of space between two consecutive ticks. The
-  /// space between two consecutive ticks is also known as the segment size.
   double get axisOuterPadding;
 
   /// Space between the two bands in the chart.
@@ -100,12 +97,9 @@ abstract class ChartAxisTheme {
   /// space between two consecutive ticks is also known as the segment size.
   double get axisBandInnerPadding;
 
-  /// Space between the first band and the measure axis.
+  /// Space between the first band and the measure axis in pixels.
   /// Only used on charts that have renderers that use "bands" of space on the
   /// dimension axes.
-  ///
-  /// Represented as a percentage of space between two consecutive ticks. The
-  /// space between two consecutive ticks is also known as the segment size.
   double get axisBandOuterPadding;
 
   /// When set to true, the vertical axes resize to fit the labels.
@@ -119,8 +113,10 @@ abstract class ChartAxisTheme {
   /// visualization.
   int get verticalAxisWidth => 200;
 
-  /// Height of horizontal axis. Width of horizontal axis is automatically
-  /// computed based on width of the visualization.
+  /// Max height of horizontal axis, this is used when the axis label need to be
+  /// rotated.  If rotated label would be ellipsed if the height is greater than
+  /// this value. Width of horizontal axis is automatically computed based on
+  /// width of the visualization.
   int get horizontalAxisHeight => 200;
 
   /// Font used by axis ticks. When specified, axis uses efficient off-screen

@@ -13,7 +13,7 @@ part of charted.charts;
 /// which contain two dimension axes.
 class DefaultCartesianAreaImpl implements CartesianArea {
   /// Default identifiers used by the measure axes
-  static const MEASURE_AXIS_IDS = const ['_default'];
+  static const MEASURE_AXIS_IDS = const <String>['_default'];
 
   /// Orientations used by measure axes. First, when "x" axis is the primary
   /// and the only dimension. Second, when "y" axis is the primary and the only
@@ -84,6 +84,7 @@ class DefaultCartesianAreaImpl implements CartesianArea {
   Iterable<ChartSeries> _series;
 
   bool _pendingLegendUpdate = false;
+  bool _pendingAxisConfigUpdate = false;
   List<ChartBehavior> _behaviors = new List<ChartBehavior>();
   Map<ChartSeries, _ChartSeriesInfo> _seriesInfoCache = new Map();
 
@@ -117,7 +118,7 @@ class DefaultCartesianAreaImpl implements CartesianArea {
   void dispose() {
     _configEventsDisposer.dispose();
     _dataEventsDisposer.dispose();
-    _config.legend.dispose();
+    _config?.legend?.dispose();
 
     if (_valueMouseOverController != null) {
       _valueMouseOverController.close();
@@ -134,6 +135,9 @@ class DefaultCartesianAreaImpl implements CartesianArea {
     if (_chartAxesUpdatedController != null) {
       _chartAxesUpdatedController.close();
       _chartAxesUpdatedController = null;
+    }
+    if (_behaviors.isNotEmpty) {
+      _behaviors.forEach((behavior) => behavior.dispose());
     }
   }
 
@@ -166,9 +170,11 @@ class DefaultCartesianAreaImpl implements CartesianArea {
     _config = value;
     _configEventsDisposer.dispose();
     _pendingLegendUpdate = true;
+    _pendingAxisConfigUpdate = true;
 
     if (_config != null && _config is Observable) {
       _configEventsDisposer.add((_config as Observable).changes.listen((_) {
+        _pendingAxisConfigUpdate = true;
         _pendingLegendUpdate = true;
         draw();
       }));
@@ -200,6 +206,7 @@ class DefaultCartesianAreaImpl implements CartesianArea {
               : new DefaultChartAxisImpl(this);
       return axis;
     });
+
     return _measureAxes[axisId];
   }
 
@@ -317,7 +324,7 @@ class DefaultCartesianAreaImpl implements CartesianArea {
         info.check();
         group.attributes['transform'] = transform;
         (s.renderer as CartesianRenderer)
-            .draw(group, schedulePostRender: schedulePostRender);
+            ?.draw(group, schedulePostRender: schedulePostRender);
       });
 
       // A series that was rendered earlier isn't there anymore, remove it
@@ -339,6 +346,7 @@ class DefaultCartesianAreaImpl implements CartesianArea {
 
     // Save the list of valid series and initialize axes.
     _series = series;
+    _updateAxisConfig();
     _initAxes(preRender: preRender);
 
     // Render the chart, now that the axes layer is already in DOM.
@@ -349,11 +357,11 @@ class DefaultCartesianAreaImpl implements CartesianArea {
   }
 
   String _orientRTL(String orientation) => orientation;
-  Scale _scaleRTL(Scale scale) => scale;
 
   /// Initialize the axes - required even if the axes are not being displayed.
   _initAxes({bool preRender: false}) {
     Map measureAxisUsers = <String, Iterable<ChartSeries>>{};
+    var keysToRemove = _measureAxes.keys.toList();
 
     // Create necessary measures axes.
     // If measure axes were not configured on the series, default is used.
@@ -361,6 +369,9 @@ class DefaultCartesianAreaImpl implements CartesianArea {
       var measureAxisIds =
           isNullOrEmpty(s.measureAxisIds) ? MEASURE_AXIS_IDS : s.measureAxisIds;
       measureAxisIds.forEach((axisId) {
+        if (keysToRemove.contains(axisId)) {
+          keysToRemove.remove(axisId);
+        }
         _getMeasureAxis(axisId); // Creates axis if required
         var users = measureAxisUsers[axisId];
         if (users == null) {
@@ -371,13 +382,17 @@ class DefaultCartesianAreaImpl implements CartesianArea {
       });
     });
 
+    for (var key in keysToRemove) {
+      _measureAxes.remove(key);
+    }
+
     // Now that we know a list of series using each measure axis, configure
     // the input domain of each axis.
     measureAxisUsers.forEach((id, listOfSeries) {
       var sampleCol = listOfSeries.first.measures.first,
           sampleColSpec = data.columns.elementAt(sampleCol),
-          axis = _getMeasureAxis(id),
-          domain;
+          axis = _getMeasureAxis(id);
+      List domain;
 
       if (sampleColSpec.useOrdinalScale) {
         throw new UnsupportedError(
@@ -561,12 +576,13 @@ class DefaultCartesianAreaImpl implements CartesianArea {
     if (_config == null || _config.legend == null || _series.isEmpty) return;
 
     var legend = <ChartLegendItem>[];
-    List seriesByColumn =
-        new List.generate(data.columns.length, (_) => new List());
+    List<List<ChartSeries>> seriesByColumn =
+        new List<List<ChartSeries>>.generate(
+            data.columns.length, (_) => <ChartSeries>[]);
 
     _series.forEach((s) => s.measures.forEach((m) => seriesByColumn[m].add(s)));
 
-    seriesByColumn.asMap().forEach((int i, List s) {
+    seriesByColumn.asMap().forEach((int i, List<ChartSeries> s) {
       if (s.length == 0) return;
       legend.add(new ChartLegendItem(
           index: i,
@@ -577,6 +593,28 @@ class DefaultCartesianAreaImpl implements CartesianArea {
 
     _config.legend.update(legend, this);
     _pendingLegendUpdate = false;
+  }
+
+  // Updates the AxisConfig, if configuration chagned since the last time the
+  // AxisConfig was updated.
+  _updateAxisConfig() {
+    if (!_pendingAxisConfigUpdate) return;
+    _series.forEach((ChartSeries s) {
+      var measureAxisIds =
+          isNullOrEmpty(s.measureAxisIds) ? MEASURE_AXIS_IDS : s.measureAxisIds;
+      measureAxisIds.forEach((axisId) {
+        var axis = _getMeasureAxis(axisId); // Creates axis if required
+        axis.config = config.getMeasureAxis(axisId);
+      });
+    });
+
+    int dimensionAxesCount = useTwoDimensionAxes ? 2 : 1;
+    config.dimensions.take(dimensionAxesCount).forEach((int column) {
+      var axis = _getDimensionAxis(column);
+      axis.config = config.getDimensionAxis(column);
+    });
+
+    _pendingAxisConfigUpdate = false;
   }
 
   @override
@@ -664,10 +702,10 @@ class _ChartAreaLayout implements ChartAreaLayout {
   get axes => _axesView;
 
   @override
-  Rect renderArea;
+  Rect renderArea = const Rect();
 
   @override
-  Rect chartArea;
+  Rect chartArea = const Rect();
 
   _ChartAreaLayout() {
     _axesView = new UnmodifiableMapView(_axes);

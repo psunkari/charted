@@ -11,7 +11,7 @@ part of charted.charts;
 /// AggregationItem is created by [AggregationModel] to make access to facts
 /// observable. Users must use AggregationItem.isValid before trying to access
 /// the aggregations.
-abstract class AggregationItem extends ChangeNotifier {
+abstract class AggregationItem extends Observable {
   /// List of dimension fields in effect
   List<String> dimensions;
 
@@ -28,6 +28,9 @@ abstract class AggregationItem extends ChangeNotifier {
   /// are supported as the operators.
   operator [](String key);
 
+  /// List of lower aggregations.
+  List<AggregationItem> lowerAggregations();
+
   /// Check if we support a given key.
   bool containsKey(String key);
 
@@ -39,7 +42,7 @@ abstract class AggregationItem extends ChangeNotifier {
 
 /// Implementation of AggregationItem
 /// Instances of _AggregationItemImpl are created only by AggregationModel
-class _AggregationItemImpl extends ChangeNotifier implements AggregationItem {
+class _AggregationItemImpl extends Observable implements AggregationItem {
   static final List<String> derivedAggregationTypes = ['count', 'avg'];
 
   AggregationModel model;
@@ -132,13 +135,10 @@ class _AggregationItemImpl extends ChangeNotifier implements AggregationItem {
     if (key == 'items') {
       return new _AggregationItemsIterator(model, dimensions, _key);
     }
-    if (key == 'aggregations') {
-      return _lowerAggregations();
-    }
     return null;
   }
 
-  List<AggregationItem> _lowerAggregations() {
+  List<AggregationItem> lowerAggregations() {
     List<AggregationItem> aggregations = new List<AggregationItem>();
     if (dimensions.length == model._dimFields.length) {
       return aggregations;
@@ -148,7 +148,7 @@ class _AggregationItemImpl extends ChangeNotifier implements AggregationItem {
     List lowerVals = model.valuesForDimension(lowerDimensionField);
 
     lowerVals.forEach((name) {
-      List lowerDims = new List.from(dimensions)..add(name);
+      List<String> lowerDims = new List.from(dimensions)..add(name);
       AggregationItem entity = model.facts(lowerDims);
       if (entity != null) {
         aggregations.add(entity);

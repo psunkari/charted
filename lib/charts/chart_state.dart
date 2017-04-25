@@ -12,7 +12,7 @@ part of charted.charts;
 /// Model to provide highlight, selection and visibility in a ChartArea.
 /// Selection and visibility
 ///
-abstract class ChartState implements ChangeNotifier {
+abstract class ChartState implements Observable {
   static int COL_SELECTED = 0x001;
   static int COL_UNSELECTED = 0x002;
   static int COL_PREVIEW = 0x004;
@@ -35,7 +35,7 @@ abstract class ChartState implements ChangeNotifier {
   static const VAL_UNHIGHLIGHTED_CLASS = 'row-unhighlighted';
   static const VAL_HOVERED_CLASS = 'row-hovered';
 
-  static const COLUMN_CLASS_NAMES = const [
+  static const COLUMN_CLASS_NAMES = const <String>[
     COL_SELECTED_CLASS,
     COL_UNSELECTED_CLASS,
     COL_PREVIEW_CLASS,
@@ -45,7 +45,7 @@ abstract class ChartState implements ChangeNotifier {
     COL_HOVERED_CLASS
   ];
 
-  static const VALUE_CLASS_NAMES = const [
+  static const VALUE_CLASS_NAMES = const <String>[
     COL_SELECTED_CLASS,
     COL_UNSELECTED_CLASS,
     COL_PREVIEW_CLASS,
@@ -76,7 +76,7 @@ abstract class ChartState implements ChangeNotifier {
 
   /// Currently highlighted value, if any, represented as column and row.
   /// Highlight is result of a click on certain value.
-  Iterable<Pair<int, int>> highlights;
+  Iterable<Pair<int, int>> get highlights;
 
   /// Currently hovered value, if any, represented as column and row.
   /// Hover is result of mouse moving over a certian value in chart.

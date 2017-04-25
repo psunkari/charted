@@ -8,7 +8,7 @@
 
 part of charted.charts;
 
-class DefaultChartConfigImpl extends ChangeNotifier implements ChartConfig {
+class DefaultChartConfigImpl extends Observable implements ChartConfig {
   final Map<String, ChartAxisConfig> _measureAxisRegistry = {};
   final Map<int, ChartAxisConfig> _dimensionAxisRegistry = {};
   final SubscriptionsDisposer _disposer = new SubscriptionsDisposer();
@@ -57,7 +57,8 @@ class DefaultChartConfigImpl extends ChangeNotifier implements ChartConfig {
     values.forEach((item) {
       if (item is Observable) {
         _disposer.add(
-            item.changes
+            (item as Observable)
+                .changes
                 .listen((_) => notifyChange(const ChartConfigChangeRecord())),
             item);
       }
@@ -109,6 +110,7 @@ class DefaultChartConfigImpl extends ChangeNotifier implements ChartConfig {
   void registerMeasureAxis(String id, ChartAxisConfig config) {
     assert(config != null);
     _measureAxisRegistry[id] = config;
+    notifyChange(const ChartConfigChangeRecord());
   }
 
   @override
@@ -119,6 +121,7 @@ class DefaultChartConfigImpl extends ChangeNotifier implements ChartConfig {
     assert(config != null);
     assert(dimensions.contains(column));
     _dimensionAxisRegistry[column] = config;
+    notifyChange(const ChartConfigChangeRecord());
   }
 
   @override

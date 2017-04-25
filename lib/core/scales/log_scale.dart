@@ -176,4 +176,8 @@ class LogScale implements Scale {
 
   @override
   LogScale clone() => new LogScale._clone(this);
+
+  // TODO(midoringo): Implement this for the log scale.
+  @override
+  int forcedTicksCount;
 }

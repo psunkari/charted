@@ -37,6 +37,13 @@ class QuantumChartTheme extends ChartTheme {
     const ['#EFF3C2', '#9D9C23', '#817616']
   ];
 
+  static final _MEASURE_AXIS_THEME =
+      new QuantumChartAxisTheme(ChartAxisTheme.FILL_RENDER_AREA, 5);
+  static final _ORDINAL_DIMENSION_AXIS_THEME =
+  new QuantumChartAxisTheme(0, 10);
+  static final _DEFAULT_DIMENSION_AXIS_THEME =
+  new QuantumChartAxisTheme(4, 10);
+
   final OrdinalScale _scale = new OrdinalScale()..range = COLORS;
 
   @override
@@ -74,14 +81,13 @@ class QuantumChartTheme extends ChartTheme {
       : OTHER_COLORS;
 
   @override
-  ChartAxisTheme getMeasureAxisTheme([Scale _]) =>
-      const QuantumChartAxisTheme(ChartAxisTheme.FILL_RENDER_AREA, 5);
+  ChartAxisTheme getMeasureAxisTheme([Scale _]) => _MEASURE_AXIS_THEME;
 
   @override
   ChartAxisTheme getDimensionAxisTheme([Scale scale]) =>
       scale == null || scale is OrdinalScale
-          ? const QuantumChartAxisTheme(0, 10)
-          : const QuantumChartAxisTheme(4, 10);
+          ? _ORDINAL_DIMENSION_AXIS_THEME
+          : _DEFAULT_DIMENSION_AXIS_THEME;
 
   @override
   AbsoluteRect get padding => const AbsoluteRect(10, 40, 0, 0);
@@ -107,37 +113,46 @@ class QuantumChartTheme extends ChartTheme {
 
 class QuantumChartAxisTheme implements ChartAxisTheme {
   @override
-  final axisOuterPadding = 0.1;
+  final double axisOuterPadding;
 
   @override
-  final axisBandInnerPadding = 0.35;
+  final double axisBandInnerPadding;
 
   @override
-  final axisBandOuterPadding = 0.175;
+  final double axisBandOuterPadding;
 
   @override
-  final axisTickPadding = 6;
+  final int axisTickPadding;
 
   @override
-  final axisTickSize;
+  final int axisTickSize;
 
   @override
-  final axisTickCount;
+  final int axisTickCount;
 
   @override
-  final verticalAxisAutoResize = true;
+  final bool verticalAxisAutoResize;
 
   @override
-  final verticalAxisWidth = 75;
+  final int verticalAxisWidth;
 
   @override
-  final horizontalAxisAutoResize = false;
+  final bool horizontalAxisAutoResize;
 
   @override
-  final horizontalAxisHeight = 50;
+  final int horizontalAxisHeight;
 
   @override
-  final ticksFont = '12px Roboto';
+  final String ticksFont;
 
-  const QuantumChartAxisTheme(this.axisTickSize, this.axisTickCount);
+  QuantumChartAxisTheme(this.axisTickSize, this.axisTickCount,
+      {this.axisOuterPadding: 12.0,
+      this.axisBandInnerPadding: 0.35,
+      this.axisBandOuterPadding: 12.0,
+      this.axisTickPadding: 6,
+      this.verticalAxisAutoResize: true,
+      this.verticalAxisWidth: 75,
+      this.horizontalAxisAutoResize: false,
+      this.horizontalAxisHeight: 50,
+      this.ticksFont: '12px Roboto'});
 }

@@ -65,6 +65,12 @@ abstract class Scale {
   /// Note: This property is only valid on quantitative scales.
   int ticksCount;
 
+  /// Forces the number of ticks on this scale to be the forcedTicksCount.
+  /// The tick values on the scale does not guarantee to be niced numbers, but
+  /// domain of the scale does.
+  /// Note: This property is only valid on quantitative scales.
+  int forcedTicksCount;
+
   /// Indicates if the current scale is using niced values for ticks.
   /// Note: This property is only valid on quantitative scales.
   bool nice;
@@ -113,8 +119,9 @@ class RoundingFunctions extends Pair<RoundFunction, RoundFunction> {
   factory RoundingFunctions.defaults() =>
       new RoundingFunctions((x) => x.floor(), (x) => x.ceil());
 
-  factory RoundingFunctions.identity() =>
-      new RoundingFunctions(identityFunction, identityFunction);
+  factory RoundingFunctions.identity() => new RoundingFunctions(
+      (num n) => identityFunction/*<num>*/(n),
+      (num n) => identityFunction/*<num>*/(n));
 
   RoundFunction get floor => super.first;
   RoundFunction get ceil => super.last;

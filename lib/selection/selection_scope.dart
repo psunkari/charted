@@ -11,7 +11,7 @@ part of charted.selection;
 /** SelectionScope represents a scope for all the data and DOM operations. */
 class SelectionScope {
   Expando _associations = new Expando();
-  Expando<Map<String, Pair<Function, bool>>> _listeners = new Expando();
+  Expando<Map<String, Pair<EventListener, bool>>> _listeners = new Expando();
   Element _root;
 
   /** Creates a new selection scope with document as the root. */
@@ -57,7 +57,11 @@ class SelectionScope {
   datum(Object element) => element == null ? null : _associations[element];
 
   /** Associates data to the given [element]. */
-  associate(Object element, datum) => _associations[element] = datum;
+  associate(Object element, datum) {
+    if (datum != null) {
+      _associations[element] = datum;
+    }
+  }
 
   /**
    * Creates a new [Selection] containing the first element matching

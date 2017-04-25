@@ -14,14 +14,14 @@ num sum(List values) => values == null || values.isEmpty
     : values.fold(0.0, (old, next) => old + next);
 
 /// Returns the smallest number in the given list of values
-num min(Iterable values) => values == null || values.isEmpty
+num min(Iterable<num> values) => values == null || values.isEmpty
     ? null
-    : values.fold(values.elementAt(0), math.min);
+    : values.fold(values.elementAt(0), (x, y) => math.min(x, y));
 
 /// Returns the largest number in the given list of values
-num max(Iterable values) => values == null || values.isEmpty
+num max(Iterable<num> values) => values == null || values.isEmpty
     ? null
-    : values.fold(values.elementAt(0), math.max);
+    : values.fold(values.elementAt(0), (x, y) => math.max(x, y));
 
 /// Represents a constant pair of values
 class Pair<T1, T2> {
@@ -101,7 +101,7 @@ class Range extends DelegatingList<num> {
     return new Range._internal(start, stop, step, values);
   }
 
-  Range._internal(this.start, this.stop, this.step, List values)
+  Range._internal(this.start, this.stop, this.step, List<num> values)
       : super(values);
 
   static int _integerConversionFactor(num val) {

@@ -9,8 +9,10 @@
 part of charted.charts;
 
 class DefaultChartAxisImpl {
+  static const int _AXIS_TITLE_HEIGHT = 20;
+
   CartesianArea _area;
-  ChartAxisConfig _config;
+  ChartAxisConfig config;
   ChartAxisTheme _theme;
   SvgAxisTicks _axisTicksPlacement;
 
@@ -22,10 +24,11 @@ class DefaultChartAxisImpl {
   String _orientation;
   Scale _scale;
   SelectionScope _scope;
+  String _title;
 
   MutableRect size;
 
-  DefaultChartAxisImpl.withAxisConfig(this._area, this._config);
+  DefaultChartAxisImpl.withAxisConfig(this._area, this.config);
   DefaultChartAxisImpl(this._area);
 
   void initAxisDomain(int column, bool isDimension, Iterable domain) {
@@ -44,10 +47,13 @@ class DefaultChartAxisImpl {
         : _area.theme.getMeasureAxisTheme(scale);
 
     // Sets the domain if not using a custom scale.
-    if (_config == null || (_config != null && _config.scale == null)) {
+    if (config == null || (config != null && config.scale == null)) {
       scale.domain = domain;
-      scale.nice = !_isDimension;
+      scale.nice = !_isDimension &&
+          !(config?.forcedTicksCount != null && config.forcedTicksCount > 0);
     }
+
+    _title = config?.title;
   }
 
   void initAxisScale(Iterable range) {
@@ -66,7 +72,13 @@ class DefaultChartAxisImpl {
       (scale as OrdinalScale)
           .rangeRoundBands(range, innerPadding, outerPadding);
     } else {
-      scale.range = range;
+      if (_title != null) {
+        var modifiedRange = range.take(range.length - 1).toList();
+        modifiedRange.add(range.last + _AXIS_TITLE_HEIGHT);
+        scale.range = modifiedRange;
+      } else {
+        scale.range = range;
+      }
       scale.ticksCount = _theme.axisTickCount;
     }
   }
@@ -82,18 +94,22 @@ class DefaultChartAxisImpl {
         ? new MutableRect.size(_theme.verticalAxisWidth, layout.width)
         : new MutableRect.size(layout.height, _theme.horizontalAxisHeight);
 
-    // Handle auto re-sizing of horizontal axis.
-    if (_isVertical) {
-      var ticks = (_config != null && !isNullOrEmpty(_config.tickValues))
-              ? _config.tickValues
-              : scale.ticks,
-          formatter = _columnSpec.formatter == null
-              ? scale.createTickFormatter()
-              : _columnSpec.formatter,
-          textMetrics = new TextMetrics(fontStyle: _theme.ticksFont),
-          formattedTicks = ticks.map((x) => formatter(x)).toList(),
-          shortenedTicks = formattedTicks;
+    if (config?.forcedTicksCount != null && config.forcedTicksCount > 0) {
+      scale.forcedTicksCount = config.forcedTicksCount;
+    }
 
+    // Handle auto re-sizing of horizontal axis.
+    var ticks = (config != null && !isNullOrEmpty(config.tickValues))
+        ? config.tickValues
+        : scale.ticks,
+
+    formatter = _columnSpec.formatter == null
+        ? scale.createTickFormatter()
+        : _columnSpec.formatter,
+    textMetrics = new TextMetrics(fontStyle: _theme.ticksFont),
+    formattedTicks = ticks.map((x) => formatter(x)).toList(),
+    shortenedTicks = formattedTicks;
+    if (_isVertical) {
       var width = textMetrics.getLongestTextWidth(formattedTicks).ceil();
       if (width > _theme.verticalAxisWidth) {
         width = _theme.verticalAxisWidth;
@@ -105,8 +121,20 @@ class DefaultChartAxisImpl {
         size.width =
             width + _theme.axisTickPadding + math.max(_theme.axisTickSize, 0);
       }
+
       _axisTicksPlacement =
           new PrecomputedAxisTicks(ticks, formattedTicks, shortenedTicks);
+    } else {
+      // Precompute if extra room is needed for rotated label.
+      var width = layout.width -
+          _area.layout.axes[ORIENTATION_LEFT].width -
+          _area.layout.axes[ORIENTATION_RIGHT].width;
+      var allowedWidth = width ~/ ticks.length,
+          maxLabelWidth = textMetrics.getLongestTextWidth(formattedTicks);
+      if (!RotateHorizontalAxisTicks.needsLabelRotation(
+          allowedWidth, maxLabelWidth)) {
+        size.height = textMetrics.fontSize * 2;
+      }
     }
   }
 
@@ -120,8 +148,8 @@ class DefaultChartAxisImpl {
         innerTickSize = _theme.axisTickSize <= ChartAxisTheme.FILL_RENDER_AREA
             ? 0 - (_isVertical ? renderAreaRect.width : renderAreaRect.height)
             : _theme.axisTickSize,
-        tickValues = _config != null && !isNullOrEmpty(_config.tickValues)
-            ? _config.tickValues
+        tickValues = config != null && !isNullOrEmpty(config.tickValues)
+            ? config.tickValues
             : null;
 
     element.attributes['transform'] = 'translate(${rect.x}, ${rect.y})';
@@ -130,8 +158,21 @@ class DefaultChartAxisImpl {
       _axisTicksPlacement = new RotateHorizontalAxisTicks(
           rect, _theme.ticksFont, _theme.axisTickSize + _theme.axisTickPadding);
     }
-
     initAxisScale(range);
+
+    if (_title != null) {
+      var label = element.querySelector('.chart-axis-label');
+      if (label != null) {
+        label.text = _title;
+      } else {
+        var title = Namespace.createChildElement('text', element);
+        title.attributes['text-anchor'] = 'middle';
+        title.text = _title;
+        title.classes.add('chart-axis-label');
+        element.append(title);
+      }
+    }
+
     var axis = new SvgAxis(
         orientation: _orientation,
         innerTickSize: innerTickSize,
@@ -149,9 +190,12 @@ class DefaultChartAxisImpl {
 
   // Scale passed through configuration takes precedence
   Scale get scale =>
-      (_config != null && _config.scale != null) ? _config.scale : _scale;
+      (config != null && config.scale != null) ? config.scale : _scale;
 
-  set scale(Scale value) => _scale = value;
+  set scale(Scale value) {
+    _scale = value;
+  }
+
 }
 
 class PrecomputedAxisTicks implements SvgAxisTicks {
@@ -171,10 +215,13 @@ class RotateHorizontalAxisTicks implements SvgAxisTicks {
 
   int rotation = 0;
   Iterable ticks;
-  Iterable formattedTicks;
+  Iterable<String> formattedTicks;
   Iterable shortenedTicks;
 
   RotateHorizontalAxisTicks(this.rect, this.ticksFont, this.tickLineLength);
+
+  static bool needsLabelRotation(num allowedWidth, num maxLabelWidth) =>
+      0.90 * allowedWidth < maxLabelWidth;
 
   void init(SvgAxis axis) {
     assert(axis.orientation == ORIENTATION_BOTTOM ||
@@ -190,7 +237,7 @@ class RotateHorizontalAxisTicks implements SvgAxisTicks {
         maxLabelWidth = textMetrics.getLongestTextWidth(formattedTicks);
 
     // Check if we need rotation
-    if (0.90 * allowedWidth < maxLabelWidth) {
+    if (needsLabelRotation(allowedWidth, maxLabelWidth)) {
       var rectHeight =
           tickLineLength > 0 ? rect.height - tickLineLength : rect.height;
       rotation = 45;

@@ -141,6 +141,7 @@ class NumberFormat {
     var zcomma = (zfill != null) && comma;
 
     return (value) {
+      if (value == null) return '-';
       var fullSuffix = suffix;
 
       // Return the empty string for floats formatted as ints.
@@ -186,13 +187,13 @@ class NumberFormat {
         before = formatGroup(before);
       }
 
-      var length = prefix.length +
-              before.length +
-              after.length +
-              (zcomma ? 0 : negative.length),
-          padding = length < width
-              ? new List.filled((length = width - length + 1), '').join(fill)
-              : '';
+      int length = prefix.length +
+          before.length +
+          after.length +
+          (zcomma ? 0 : negative.length);
+      var padding = length < width
+          ? new List.filled((length = width - length + 1), '').join(fill)
+          : '';
 
       // If the fill character is '0', grouping is applied after padding.
       if (zcomma) {

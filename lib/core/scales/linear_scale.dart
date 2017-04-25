@@ -16,9 +16,10 @@ class LinearScale implements Scale {
   Iterable _range = defaultRange;
 
   int _ticksCount = 5;
+  int _forcedTicksCount = -1;
+
   bool _clamp = false;
   bool _nice = false;
-
   Function _invert;
   Function _scale;
 
@@ -38,6 +39,11 @@ class LinearScale implements Scale {
     if (nice) {
       _domain = ScaleUtils.nice(
           _domain, ScaleUtils.niceStep(_linearTickRange().step));
+    } else {
+      if (_forcedTicksCount > 0) {
+        var tickRange = _linearTickRange();
+        _domain = [tickRange.first, tickRange.last];
+      }
     }
 
     Function linear = math.min(_domain.length, _range.length) > 2
@@ -45,8 +51,12 @@ class LinearScale implements Scale {
         : ScaleUtils.bilinearScale;
 
     Function uninterpolator = clamp ? uninterpolateClamp : uninterpolateNumber;
-    InterpolatorGenerator interpolator =
-        _rounded ? createRoundedNumberInterpolator : createNumberInterpolator;
+    InterpolatorGenerator interpolator;
+    if (rounded) {
+      interpolator = createRoundedNumberInterpolator;
+    } else {
+      interpolator = createNumberInterpolator;
+    }
 
     _invert = linear(_range, _domain, uninterpolator, createNumberInterpolator);
     _scale = linear(_domain, _range, uninterpolator, interpolator);
@@ -95,6 +105,13 @@ class LinearScale implements Scale {
   @override
   int get ticksCount => _ticksCount;
 
+  set forcedTicksCount(int value) {
+    _forcedTicksCount = value;
+    _reset(nice: false);
+  }
+
+  get forcedTicksCount => _forcedTicksCount;
+
   @override
   Iterable get ticks => _linearTickRange();
 
@@ -126,10 +143,10 @@ class LinearScale implements Scale {
   Extent get rangeExtent => ScaleUtils.extent(_range);
 
   @override
-  num scale(num value) => _scale(value);
+  scale(value) => _scale(value);
 
   @override
-  num invert(num value) => _invert(value);
+  invert(value) => _invert(value);
 
   Range _linearTickRange([Extent extent]) {
     if (extent == null) {
@@ -139,16 +156,38 @@ class LinearScale implements Scale {
     if (span == 0) {
       span = 1.0; // [span / _ticksCount] should never be equal zero.
     }
-    var step = math.pow(10, (math.log(span / _ticksCount) / math.LN10).floor());
-    var err = _ticksCount / span * step;
 
-    // Filter ticks to get closer to the desired count.
-    if (err <= .15) {
-      step *= 10;
-    } else if (err <= .35) {
-      step *= 5;
-    } else if (err <= .75) {
-      step *= 2;
+    var step;
+    if (_forcedTicksCount > 0) {
+      // Find the factor (in power of 10) for the max and min of the extent and
+      // round the max up and min down to make sure the domain of the scale is
+      // of nicely rounded number and it contains the original domain.  This way
+      // when forcing the ticks count at least the two ends of the scale would
+      // look nice and has a high chance of having the intermediate tick values
+      // to be nice.
+      var maxFactor = extent.max == 0 ? 1
+          : math.pow(10, (math.log((extent.max as num).abs() / forcedTicksCount)
+              / math.LN10).floor());
+      var max = (extent.max / maxFactor).ceil() * maxFactor;
+      var minFactor = extent.min == 0 ? 1
+          : math.pow(10, (math.log((extent.min as num).abs() / forcedTicksCount)
+              / math.LN10).floor());
+      var min = (extent.min / minFactor).floor() * minFactor;
+      step = (max - min) / forcedTicksCount;
+      return new Range(min, max + step * 0.5, step);
+    } else {
+
+      step = math.pow(10, (math.log(span / _ticksCount) / math.LN10).floor());
+      var err = _ticksCount / span * step;
+
+      // Filter ticks to get closer to the desired count.
+      if (err <= .15) {
+        step *= 10;
+      } else if (err <= .35) {
+        step *= 5;
+      } else if (err <= .75) {
+        step *= 2;
+      }
     }
 
     return new Range((extent.min / step).ceil() * step,

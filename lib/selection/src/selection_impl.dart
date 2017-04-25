@@ -13,7 +13,7 @@ part of charted.selection;
  * the select or selectAll methods on [SelectionScope] and [Selection].
  */
 class _SelectionImpl implements Selection {
-  Iterable<SelectionGroup> groups;
+  List<SelectionGroup> groups;
   SelectionScope scope;
 
   /**
@@ -148,7 +148,7 @@ class _SelectionImpl implements Selection {
    * be part of the same group, with [SelectionScope.root] as the group's parent
    */
   _SelectionImpl.elements(Iterable elements, this.scope) {
-    groups = <SelectionGroup>[new _SelectionGroupImpl(elements)];
+    groups = <SelectionGroup>[new _SelectionGroupImpl(elements.toList())];
   }
 
   /** Calls a function on each non-null element in the selection */
@@ -175,7 +175,7 @@ class _SelectionImpl implements Selection {
   }
 
   void on(String type, [SelectionCallback listener, bool capture]) {
-    Function getEventHandler(i, e) => (Event event) {
+    EventListener getEventHandler(i, e) => (Event event) {
           var previous = scope.event;
           scope.event = event;
           try {
@@ -208,7 +208,7 @@ class _SelectionImpl implements Selection {
       // Remove all listeners on the event type (ignoring the namespace)
       each((d, i, Element e) {
         var handlers = scope._listeners[e], t = type.substring(1);
-        handlers.forEach((String s, Pair<Function, bool> value) {
+        handlers.forEach((String s, Pair<EventListener, bool> value) {
           if (s.split('.')[0] == t) {
             e.removeEventListener(s, value.first, value.last);
           }
@@ -387,7 +387,9 @@ class _SelectionImpl implements Selection {
       [SelectionKeyFunction keyFn]) {
     assert(fn != null);
 
-    var enterGroups = [], updateGroups = [], exitGroups = [];
+    var enterGroups = <SelectionGroup>[],
+        updateGroups = <SelectionGroup>[],
+        exitGroups = <SelectionGroup>[];
 
     // Joins data to all elements in the group.
     void join(SelectionGroup g, Iterable vals) {
@@ -503,7 +505,10 @@ class _DataSelectionImpl extends _SelectionImpl implements DataSelection {
   EnterSelection enter;
   ExitSelection exit;
 
-  _DataSelectionImpl(Iterable updated, Iterable entering, Iterable exiting,
+  _DataSelectionImpl(
+      List<SelectionGroup> updated,
+      Iterable<SelectionGroup> entering,
+      Iterable<SelectionGroup> exiting,
       SelectionScope scope)
       : super.selectionGroups(updated, scope) {
     enter = new _EnterSelectionImpl(entering, this);
@@ -518,7 +523,7 @@ class _EnterSelectionImpl implements EnterSelection {
   SelectionScope scope;
   Iterable<SelectionGroup> groups;
 
-  _EnterSelectionImpl(Iterable this.groups, DataSelection this.update) {
+  _EnterSelectionImpl(this.groups, this.update) {
     scope = update.scope;
   }
 
@@ -568,11 +573,11 @@ class _EnterSelectionImpl implements EnterSelection {
   }
 
   Selection selectWithCallback(SelectionCallback<Element> fn) {
-    var subgroups = [];
+    var subgroups = <SelectionGroup>[];
     for (int gi = 0, len = groups.length; gi < len; ++gi) {
       final g = groups.elementAt(gi);
       final u = update.groups.elementAt(gi);
-      final subgroup = [];
+      final subgroup = <Element>[];
       for (int ei = 0, eLen = g.elements.length; ei < eLen; ++ei) {
         final e = g.elements.elementAt(ei);
         if (e != null) {
@@ -593,13 +598,13 @@ class _EnterSelectionImpl implements EnterSelection {
 /* Implementation of [ExitSelection] */
 class _ExitSelectionImpl extends _SelectionImpl implements ExitSelection {
   final DataSelection update;
-  _ExitSelectionImpl(Iterable groups, DataSelection update)
+  _ExitSelectionImpl(List<SelectionGroup> groups, DataSelection update)
       : update = update,
         super.selectionGroups(groups, update.scope);
 }
 
 class _SelectionGroupImpl implements SelectionGroup {
-  Iterable<Element> elements;
+  List<Element> elements;
   Element parent;
   _SelectionGroupImpl(this.elements, {this.parent});
 }
